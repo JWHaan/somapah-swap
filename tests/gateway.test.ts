@@ -102,7 +102,7 @@ describe("Cognitio gateway adapter", () => {
     expect(JSON.stringify(result)).not.toContain("CLASSGW_KEY");
   });
 
-  it.each(["", "   ", "x".repeat(201)])(
+  it.each(["", "   ", "x".repeat(12_001)])(
     "rejects invalid adapter input without fetching",
     async (input) => {
       const result = await callCognitioGateway(input);
@@ -114,6 +114,19 @@ describe("Cognitio gateway adapter", () => {
       expect(fetchMock).not.toHaveBeenCalled();
     },
   );
+
+  it("accepts a complete server-built prompt at the twelve-thousand-character ceiling", async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        choices: [{ message: { content: "bounded response" } }],
+      }),
+    );
+
+    const result = await callCognitioGateway("x".repeat(12_000));
+
+    expect(result.ok).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
 
   it("parses text, numeric usage, and safe observability headers", async () => {
     fetchMock.mockResolvedValue(
@@ -251,6 +264,49 @@ describe("Cognitio gateway adapter", () => {
       ok: false,
       error: { code: "PROVIDER_INVALID_RESPONSE" },
     });
+  });
+
+  it("maps the documented gateway error envelope to a sanitized failure", async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        type: "error",
+        error: {
+          type: "forwarding_error",
+          message: "raw upstream detail mentioning CLASSGW_KEY and Bearer",
+        },
+      }),
+    );
+
+    const result = await callCognitioGateway("hello gateway");
+    const serialized = JSON.stringify(result);
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: { code: "PROVIDER_UNAVAILABLE" },
+    });
+    expect(serialized).not.toContain("raw upstream detail");
+    expect(serialized).not.toContain("CLASSGW_KEY");
+    expect(serialized).not.toContain("Bearer");
+  });
+
+  it("classifies a rate-limit error envelope without exposing its message", async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        type: "error",
+        error: {
+          type: "rate_limit_error",
+          message: "upstream said too many requests with CLASSGW_KEY",
+        },
+      }),
+    );
+
+    const result = await callCognitioGateway("hello gateway");
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: { code: "PROVIDER_RATE_LIMITED" },
+    });
+    expect(JSON.stringify(result)).not.toContain("too many requests");
   });
 
   it("rejects invalid JSON from a successful provider response", async () => {

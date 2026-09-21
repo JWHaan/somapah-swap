@@ -1,3 +1,4 @@
+import { CatalogueAssistant } from "@/components/CatalogueAssistant";
 import { MarketplaceCatalogue } from "@/components/MarketplaceCatalogue";
 import { getListings } from "@/lib/catalogue";
 
@@ -23,6 +24,8 @@ export default function Home() {
           </p>
         </div>
       </section>
+
+      <CatalogueAssistant />
 
       <MarketplaceCatalogue listings={listings} />
     </main>

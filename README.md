@@ -2,10 +2,13 @@
 
 Somapah Swap is a mobile-first second-hand marketplace demo for SUTD students.
 It provides a validated 15-item catalogue, category filters, item detail pages,
-a simulated reserve interaction, and an honest public `/notes` page. Milestone
-2 adds a server-only Cognitio gateway adapter that was verified locally and
-through Vercel. The temporary diagnostic route used for verification has been
-removed; catalogue search and Q&A remain unimplemented.
+a simulated reserve interaction, and an honest public `/notes` page.
+
+Milestone 3 adds a value-gated, catalogue-grounded assistant on the home page.
+Most questions are answered in code and never reach a model; comparisons make at
+most one server-side call to a model provider, and every model citation is
+validated against the retrieved listings before it is shown. Natural-language
+search is still not implemented.
 
 ## Requirements
 
@@ -23,8 +26,9 @@ npm run dev
 Open `http://localhost:3000`.
 
 Set `CLASSGW_KEY` in the ignored `.env.local` file when exercising server-only
-gateway code during local development. The credential is read only by server
-code and must never use a `NEXT_PUBLIC_` prefix.
+gateway code during local development. Provide the value only in that file or
+in the Vercel environment settings; never commit it. The credential is read only
+by server code and must never use a `NEXT_PUBLIC_` prefix.
 
 ## Validation
 
@@ -57,9 +61,74 @@ npm run build
 
 - All listings are seeded in `data/listings.json`.
 - Reserve is simulated and never contacts a seller or takes payment.
-- The fixed-model Cognitio connection is implemented and verified locally and
-  through the production Vercel deployment.
-- The temporary verification route has been removed and no public model API is
-  exposed by this milestone.
-- Natural-language search, catalogue Q&A, grounding, reranking, and caching are
-  not implemented.
+- `POST /api/ask` answers catalogue questions. It rejects unknown fields and
+  bodies over 2 KiB, and it never exposes provider metadata to the browser.
+- The assistant appears on the home page only, but `/api/ask` already accepts an
+  optional `item_id` so an item page can reuse it later without an API change.
+- Q&A uses the gateway's explicit OpenRouter route with
+  `deepseek/deepseek-v4.1-flash`. The GPT adapter is retained behind the same
+  provider-independent interface in `lib/qa-provider.ts`.
+- Deterministic questions make zero provider calls, and provider failures
+  degrade to a grounded deterministic fallback.
+- Natural-language search, search reranking, embeddings, caching, and
+  authentication are not implemented.
+- There is no distributed rate limiting. A public deployment could be called
+  repeatedly, so request limits and per-IP throttling are a known production
+  gap.
+
+## Catalogue Q&A architecture
+
+`POST /api/ask` is deterministic-first:
+
+1. The route reads a bounded raw body and rejects unknown fields.
+2. A strict scope gate rejects off-topic, adversarial, and no-match questions.
+3. Simple facts, explicit exclusions, and missing facts are answered in code.
+4. Otherwise bounded lexical retrieval returns at most 4 candidates, or 6 for a
+   justified broad comparison.
+5. Only a question that needs comparison or explanation reaches the model, once.
+6. Model output must be strict JSON, and every cited ID is checked against the
+   retrieved candidate set before anything is shown.
+7. Provider errors, malformed output, or a bad citation fall back to a grounded
+   deterministic summary of the retrieved listings.
+
+Fail-closed citations mean an invented, external, path-like, or unretrieved ID
+invalidates the whole model answer rather than showing part of it.
+
+Bounded retrieval is lexical: exact item context, title phrases, head nouns, and
+explicit price or category constraints, with a relevance floor.
+
+## Providers
+
+Model calls are server-only and centralized:
+
+| Module              | Provider            | Endpoint                          | Model                          |
+| ------------------- | ------------------- | --------------------------------- | ------------------------------ |
+| `lib/gateway.ts`    | Cognitio default    | `/v1/chat/completions`            | `gpt-5.6-luna`                 |
+| `lib/openrouter.ts` | Cognitio OpenRouter | `/openrouter/v1/chat/completions` | `deepseek/deepseek-v4.1-flash` |
+
+`lib/qa-provider.ts` selects the active provider, so switching back to the
+verified GPT adapter is a one-line change. The public client cannot choose a
+provider, model, endpoint, headers, token bound, reasoning settings, messages,
+tools, or timeout.
+
+The OpenRouter request fixes `max_tokens: 450` and disables reasoning with
+`reasoning: { effort: "none", exclude: true }`, and the route declares
+`maxDuration = 30` with a 25-second provider timeout.
+
+### Observed live verification
+
+One controlled request through `POST /api/ask` returned `mode: "ai"` with
+`finish_reason: "stop"`, `345` input tokens, `238` completion tokens, `0`
+reasoning tokens, and `583` total tokens in `3163 ms`. This is one measurement,
+not a guarantee.
+
+## Catalogue assistant API
+
+```bash
+curl -s http://localhost:3000/api/ask \
+  -H 'Content-Type: application/json' \
+  -d '{"question":"What is the iPad battery health?"}'
+```
+
+The response contains `answer`, `cited_ids`, `citations`, `missing`, `scope`,
+and `mode`. `mode` is `deterministic`, `ai`, or `fallback`.

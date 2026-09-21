@@ -9,102 +9,232 @@ export default function NotesPage() {
     <main className="page-section page-container" id="main-content">
       <header className="page-heading">
         <p className="eyebrow">Assessment notes</p>
-        <h1>What is built so far</h1>
+        <h1>What I built</h1>
         <p>
-          This page documents the current milestone honestly. The marketplace is
-          deployed, and the server-side Cognitio model connection has been
-          verified locally and through the production Vercel deployment.
-          Natural-language search and catalogue Q&amp;A are still pending.
+          Somapah Swap is a seeded second-hand marketplace for SUTD students,
+          with a catalogue assistant that answers only from the listing data.
+          This page explains how it works and what it deliberately does not do.
         </p>
       </header>
 
       <div className="notes-layout">
         <section className="panel notes-section">
-          <h2>Product and intended buyer</h2>
+          <h2>Who it is for</h2>
           <p>
-            Somapah Swap is a mobile-first second-hand marketplace demo for SUTD
-            students looking for course, dorm, or tech items around the Somapah
-            campus.
+            A SUTD student on a phone who wants a used course, dorm, or tech
+            item this week and needs to meet on or near campus at Somapah. The
+            reviewer is a stranger who has never been to SUTD, so the copy
+            always names the campus rather than assuming local slang.
           </p>
         </section>
 
         <section className="panel notes-section">
           <h2>Core buyer journey</h2>
           <p>
-            A buyer can browse the catalogue, filter it by category, open an
-            item, review its stated condition and meetup details, and try a
-            clearly simulated reservation.
+            Browse the 15 seeded listings, filter by category, open an item to
+            read its stated condition, defects, and meetup details, ask the
+            catalogue assistant a question, then try a clearly simulated
+            reservation that contacts nobody and charges nothing.
           </p>
         </section>
 
         <section className="panel notes-section">
-          <h2>Seeded and simulated</h2>
+          <h2>Seeded, simulated, and limited</h2>
           <ul>
             <li>All 15 listings are seeded demonstration records.</li>
             <li>No real sellers or user accounts exist.</li>
-            <li>Reserve does not contact anyone or take payment.</li>
-          </ul>
-        </section>
-
-        <section className="panel notes-section">
-          <h2>Current architecture</h2>
-          <p>
-            The app uses Next.js App Router and TypeScript. A validated local
-            JSON catalogue supplies the browse page and item routes. Client
-            components are limited to category filtering and the reserve
-            interaction. A centralized server-only adapter owns the fixed
-            Cognitio gateway request and credential access, so the gateway
-            credential never enters browser code.
-          </p>
-        </section>
-
-        <section className="panel notes-section">
-          <h2>Implemented so far</h2>
-          <ul>
-            <li>Responsive browse and item-detail routes</li>
-            <li>Deterministic category filters</li>
-            <li>Runtime catalogue validation and focused tests</li>
-            <li>Accessible simulated reserve feedback</li>
-            <li>Bounded, fixed-model server-side gateway adapter</li>
-            <li>Local and production Vercel gateway verification</li>
-          </ul>
-        </section>
-
-        <section className="panel notes-section">
-          <h2>Gateway verification</h2>
-          <ul>
-            <li>The verification used the fixed model gpt-5.6-luna.</li>
+            <li>Reserve does not contact anyone and takes no payment.</li>
+            <li>Availability is whatever the seller wrote; nothing is live.</li>
             <li>
-              The observed production request used 28 total tokens and took
-              approximately 4.1 seconds.
-            </li>
-            <li>The gateway credential remained server-side.</li>
-            <li>
-              The temporary diagnostic route was removed after verification.
+              Four facts are deliberately absent so the assistant has to admit
+              it: iPad battery health, Keychron Bluetooth status, mini-fridge
+              capacity, and folding-bike brand.
             </li>
           </ul>
         </section>
 
         <section className="panel notes-section">
-          <h2>Pending AI work</h2>
+          <h2>Architecture</h2>
           <p>
-            <span className="status-badge">Connection verified</span>
-          </p>
-          <p>
-            Natural-language search, keyword fallback, catalogue Q&amp;A,
-            grounding, citation validation, and model evaluation are not
-            implemented. There is no public search or Q&amp;A model endpoint in
-            this milestone.
+            Next.js App Router with TypeScript and a validated JSON catalogue.
+            The browser calls <code>POST /api/ask</code>; the route reads a
+            bounded request body, validates it strictly, retrieves a small set
+            of relevant listings, decides whether the question is answerable in
+            code, and only then considers the model. A single server-only
+            adapter owns the gateway credential, so it never enters browser
+            code, and the model never receives product objects it can rewrite.
           </p>
         </section>
 
         <section className="panel notes-section">
-          <h2>Known limitations</h2>
+          <h2>Q&amp;A grounding design</h2>
           <p>
-            The catalogue is fixed, reserve is non-persistent, no seller can
-            respond, and the verified gateway adapter is not yet connected to a
-            buyer-facing feature. Pickup and meetup availability are only the
-            seller-provided seeded statements.
+            Most questions never reach a model. Exact facts, explicit
+            exclusions, missing facts, and off-catalogue requests are decided in
+            code, which makes them faster and impossible to hallucinate. The
+            model is asked only when a comparison or explanation genuinely
+            benefits from language reasoning, and it receives just the retrieved
+            listings.
+          </p>
+          <p>
+            Model citations are treated as untrusted. Every cited ID must be a
+            plain listing ID that exists in the catalogue and was in the
+            retrieved set. If any citation is invented, external, or outside
+            that set, I discard the whole answer rather than showing part of it,
+            and I never ask the model to repair itself.
+          </p>
+        </section>
+
+        <section className="panel notes-section">
+          <h2>Tools and models used</h2>
+          <p>
+            I built this with Codex as the AI coding tool, working to the
+            assessment brief and the Cognitio gateway documentation. Model calls
+            happen only on the server. No model powers search yet, because
+            natural-language search is not implemented in this milestone.
+          </p>
+          <p>
+            The assistant currently uses{" "}
+            <code>deepseek/deepseek-v4.1-flash</code> through the gateway&apos;s
+            explicit OpenRouter route, which has a separate budget. The gateway
+            automatic fallback is not used.
+          </p>
+          <p>
+            GPT came first. During Milestone 2 I verified{" "}
+            <code>gpt-5.6-luna</code> through the default chat-completions
+            route, locally and from the deployed site. Later, that route began
+            answering with <code>X-Gateway-Fallback: window_share</code> because
+            the subscription share was exhausted, and the automatic fallback
+            upstream returned an HTTP 200 body containing an error object
+            instead of choices. Rather than wait for the share to recover, I
+            moved Q&amp;A to the explicit OpenRouter route. The original GPT
+            adapter is still implemented and tested behind the same
+            provider-independent interface, so switching back is a one-line
+            change.
+          </p>
+          <p>
+            Reasoning is explicitly disabled for this request with{" "}
+            <code>{'reasoning: { effort: "none", exclude: true }'}</code>. A
+            64-token reasoning cap was tried first but the upstream route
+            accepted it without honouring it, which left no room for an answer.
+            Disabling reasoning produced a short structured JSON reply from the
+            same 450-token completion budget.
+          </p>
+        </section>
+
+        <section className="panel notes-section">
+          <h2>Validation and failure handling</h2>
+          <ul>
+            <li>
+              Questions are 3–500 characters and unknown fields are rejected.
+            </li>
+            <li>Raw request bodies over 2 KiB are refused before parsing.</li>
+            <li>
+              The model path makes at most one provider call, with a fixed model
+              and endpoint, no tools, no history, and a twelve-second timeout.
+            </li>
+            <li>
+              Timeouts, rate limits, malformed model output, and bad citations
+              all resolve to a deterministic summary of the retrieved listings.
+            </li>
+            <li>
+              Buyer responses never include provider status, headers, token
+              counts, latency, prompts, or internal scoring.
+            </li>
+          </ul>
+        </section>
+
+        <section className="panel notes-section">
+          <h2>Evaluation</h2>
+          <ul>
+            <li>
+              iPad Apple Pencil question: correctly answered “no”, no model
+              call.
+            </li>
+            <li>
+              Battery health, fridge capacity, bike brand: “the listing does not
+              say”.
+            </li>
+            <li>Keychron Bluetooth: reported as not confirmed, wired noted.</li>
+            <li>
+              Monitor fairness: price quoted, external market data declined.
+            </li>
+            <li>
+              Same-day fridge pickup: meetup window quoted, live availability
+              declined.
+            </li>
+            <li>
+              Latest-news and secret-extraction prompts: declined, no model
+              call.
+            </li>
+            <li>
+              Desk-versus-stand comparison: one model call, citations validated.
+            </li>
+          </ul>
+          <p>
+            These cases run automatically in the test suite, including
+            adversarial ones that assert no provider call happens at all.
+          </p>
+        </section>
+
+        <section className="panel notes-section">
+          <h2>Security and privacy</h2>
+          <ul>
+            <li>
+              The gateway credential is server-side and never in model context.
+            </li>
+            <li>Questions and listing text are treated as untrusted data.</li>
+            <li>Clients cannot choose a model, endpoint, headers, or tools.</li>
+            <li>No arbitrary URL fetching exists.</li>
+            <li>Raw provider errors and stack traces are never returned.</li>
+          </ul>
+        </section>
+
+        <section className="panel notes-section">
+          <h2>What I chose not to build</h2>
+          <p>
+            No authentication, payments, seller messaging, or real reservations,
+            because the assessment does not require them and they would add risk
+            without demonstrating anything about the buyer journey. No vector
+            database or embeddings: with 15 listings, lexical retrieval plus
+            targeted prompt bounds is easier to reason about and to test.
+          </p>
+        </section>
+
+        <section className="panel notes-section">
+          <h2>Known issues and unfinished work</h2>
+          <p>
+            <span className="status-badge">Verified</span>
+          </p>
+          <p>
+            A controlled live check on 21 September 2026 returned a real
+            AI-backed answer. It finished with a stop reason, used 345 input and
+            238 completion tokens with zero reasoning tokens, and took about 3.1
+            seconds. It cited only the folding desk and the laptop stand, both
+            retrieved candidates, and listed what the catalogue does not
+            establish: dimensions, folded size, weight, exact laptop
+            compatibility, and whether either item fits a particular room. That
+            is one measurement, not a guarantee, and the gateway budget is
+            shared and finite.
+          </p>
+          <p>
+            Earlier attempts failed honestly before this worked: the default
+            fallback route returned an HTTP 200 error envelope, the first
+            explicit OpenRouter attempt spent its whole budget on reasoning, and
+            a later attempt exceeded the original twelve-second timeout. Each
+            one fell back to the grounded deterministic summary with validated
+            listings rather than inventing an answer.
+          </p>
+          <p>
+            Natural-language marketplace search, keyword search fallback, and
+            result reranking are not implemented, so the home page still uses
+            category filters rather than a search box. The assistant appears on
+            the home page only; the item page does not yet pre-fill its item
+            context even though the API already accepts it. Retrieval is lexical
+            and tuned for this small catalogue, so it would need revisiting
+            before a much larger one. Very unusual phrasings can still retrieve
+            a loosely related item, because the relevance rules are heuristics
+            rather than true language understanding.
           </p>
         </section>
       </div>

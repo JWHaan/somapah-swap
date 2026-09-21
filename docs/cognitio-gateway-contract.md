@@ -424,3 +424,224 @@ path was recorded.
 The temporary application diagnostic route was removed after successful local
 and production verification. It was not reused as a search or Q&A endpoint, and
 Milestone 2 exposes no public model route.
+
+## Explicit OpenRouter Interface
+
+### Why It Exists
+
+During Milestone 3 the default Chat Completions route stopped returning usable
+generated text. A controlled live request received:
+
+- HTTP status: `200`
+- `X-Gateway-Upstream`: `deepseek`
+- `X-Gateway-Fallback`: `window_share`
+- response body: an application-level error envelope instead of `choices`
+
+The gateway was automatically falling back because the primary subscription
+share was exhausted, and that fallback upstream returned an error. The body was
+an HTTP `200` response, so the application classified it as an invalid provider
+response and degraded safely.
+
+The console also documents an explicit OpenRouter interface with a separate
+budget. Catalogue Q&A therefore uses that explicit route instead of relying on
+the automatic fallback.
+
+### Base URL
+
+```text
+https://174.138.16.223/openrouter/v1
+```
+
+### Endpoint
+
+```text
+/chat/completions
+```
+
+### Full Request URL
+
+```text
+https://174.138.16.223/openrouter/v1/chat/completions
+```
+
+### Authentication
+
+The same `CLASSGW_KEY` credential is used with `Authorization: Bearer`. No
+separate OpenRouter key is required or configured.
+
+### Selected Model
+
+```text
+deepseek/deepseek-v4.1-flash
+```
+
+### Request Body
+
+```json
+{
+  "model": "deepseek/deepseek-v4.1-flash",
+  "messages": [
+    {
+      "role": "user",
+      "content": "<server-built grounded prompt>"
+    }
+  ],
+  "stream": false,
+  "max_tokens": 450,
+  "reasoning": {
+    "effort": "none",
+    "exclude": true
+  }
+}
+```
+
+The application sends exactly one user message, no tools, no functions, no
+conversation history. The request uses fixed server-side reasoning controls.
+
+### Completion And Reasoning Bounds
+
+| Setting             | Value    | Purpose                                   |
+| ------------------- | -------- | ----------------------------------------- |
+| `max_tokens`        | `450`    | Total completion budget                   |
+| `reasoning.effort`  | `"none"` | Disables reasoning consumption            |
+| `reasoning.exclude` | `true`   | Omits reasoning content from the response |
+
+#### Why These Values Changed
+
+The first explicit OpenRouter live check used a `300`-token completion budget
+with no reasoning controls. The model spent that entire budget on internal
+reasoning and returned `finish_reason: "length"` with no visible answer text,
+so the application rejected the empty answer and returned the grounded
+deterministic fallback.
+
+`max_tokens` is treated as the total completion budget, covering both reasoning
+and visible output where the upstream provider applies that behaviour.
+`reasoning.effort` and `reasoning.max_tokens` are never sent together.
+
+#### Why The Control Changed
+
+A `reasoning.max_tokens: 64` cap was accepted with HTTP 200 but not honoured.
+Usage metadata attributed all `450` completion tokens to reasoning, the finish
+reason was `length`, and no visible content was produced. Because the numerical
+cap did not bound consumption on this route, explicit
+`reasoning.effort: "none"` disablement replaced it.
+
+`reasoning.exclude: true` only omits reasoning content from the response; it does
+not by itself reduce reasoning consumption. `reasoning.effort: "none"` is the
+control that disables consumption.
+
+The total completion budget remains bounded at `450` tokens, and the settings
+apply only to the fixed server-side catalogue Q&A provider. The public client
+cannot select or override the model, token bound, reasoning settings, provider,
+endpoint, headers, messages, tools, or timeout.
+
+### Reasoning Output
+
+Reasoning content is never forwarded to the browser, never stored in a public
+response, and never written to logs. Only token counts are retained internally
+when the provider reports them.
+
+### Timeout And Route Duration
+
+| Setting                 | Value    | Scope                          |
+| ----------------------- | -------- | ------------------------------ |
+| `OPENROUTER_TIMEOUT_MS` | `25_000` | OpenRouter Q&A adapter only    |
+| `maxDuration`           | `30`     | `app/api/ask/route.ts`         |
+| `GATEWAY_TIMEOUT_MS`    | `12_000` | Default GPT adapter, unchanged |
+
+The OpenRouter timeout was raised from twelve seconds after live evidence: a
+controlled request reached the existing twelve-second abort boundary at
+approximately `12,051 ms` without receiving a provider response. The abort
+remains a hard boundary, and the request still makes exactly one provider call
+with no retry, no automatic second attempt, and no provider or model switching.
+
+The route declares a `30`-second maximum duration, leaving roughly five seconds
+of headroom for request validation, catalogue retrieval, prompt construction,
+provider-response parsing, model-output validation, citation validation, and
+response serialization. The application-level provider timeout always remains
+shorter than the route maximum duration. No `vercel.json` is needed.
+
+The verified GPT adapter keeps its own twelve-second timeout and is unaffected
+by the OpenRouter value; the two adapters configure their bounds independently.
+
+### Response Handling
+
+The endpoint is OpenAI-compatible. The application validates at runtime:
+
+- `choices` is an array
+- `choices[0]` exists
+- `choices[0].message` exists
+- `choices[0].message.content` is a non-empty string
+- usage counts are numeric when present
+
+Usage normalization matches the default route:
+
+```text
+usage.prompt_tokens     -> usage.inputTokens
+usage.completion_tokens -> usage.outputTokens
+usage.total_tokens      -> usage.totalTokens
+```
+
+When the provider reports it, the reasoning token count is also retained
+internally:
+
+```text
+usage.completion_tokens_details.reasoning_tokens -> usage.reasoningTokens
+```
+
+### Error Handling
+
+Because an HTTP `200` response can still carry an application-level error, the
+adapter inspects the body for an `error` object and classifies it as a sanitized
+rate-limit, authentication, budget, or generic provider failure. Status-based
+mapping covers `400`, `401`, `402`, `403`, `404`, `429`, and `5xx`.
+
+Raw provider messages, request identifiers, headers, and credentials are never
+returned to the browser.
+
+### Live Verification
+
+Recorded separately in `app/notes/page.tsx` after the Milestone 3 controlled
+request. Only sanitized fields are retained: provider, model, status, candidate
+IDs, cited IDs, latency, normalized token usage, and grounding assessment.
+
+### Preserved Default Route
+
+The original `POST /v1/chat/completions` integration with model
+`gpt-5.6-luna` remains implemented and tested in `lib/gateway.ts`. It is
+reachable through the provider-independent selection point in
+`lib/qa-provider.ts`, so the application can switch back by changing one
+constant once the subscription share recovers.
+
+### Live Verification Record
+
+One controlled request was made through `POST /api/ask` on 21 September 2026
+after the reasoning control change.
+
+Request: compare the folding desk and laptop stand for a small hostel room.
+
+| Field                 | Observed value                                               |
+| --------------------- | ------------------------------------------------------------ |
+| HTTP status           | `200`                                                        |
+| Public mode           | `ai`                                                         |
+| Provider              | `openrouter`                                                 |
+| Model                 | `deepseek/deepseek-v4.1-flash`                               |
+| Candidate IDs         | `desk-small-05`, `laptop-stand-15`                           |
+| Cited IDs             | `desk-small-05`, `laptop-stand-15`                           |
+| Finish reason         | `stop`                                                       |
+| Route latency         | `3163 ms`                                                    |
+| Provider latency      | `3119 ms`                                                    |
+| Input tokens          | `345`                                                        |
+| Completion tokens     | `238`                                                        |
+| Reasoning tokens      | `0`                                                          |
+| Visible output tokens | `238`                                                        |
+| Total tokens          | `583`                                                        |
+| Grounding result      | Accepted; every citation validated against the retrieved set |
+
+Reasoning disablement was honoured on this route: the finish reason was `stop`,
+reasoning tokens were `0`, and the completion budget produced a visible
+structured answer instead of being consumed by reasoning.
+
+This is one observed measurement, not a guarantee for future requests. No
+credential, Authorization value, raw provider payload, reasoning text, request
+identifier, account detail, internal prompt, or local path was recorded.

@@ -5,62 +5,60 @@ import {
   containsForbiddenPublicText,
   isRecord,
   parseProviderUsage,
-  sanitizeObservation,
   sanitizeRetryAfter,
   type ProviderUsage,
 } from "@/lib/provider-support";
 
-export const COGNITIO_GATEWAY_URL =
-  "https://174.138.16.223/v1/chat/completions";
-export const COGNITIO_GATEWAY_MODEL = "gpt-5.6-luna";
-export const GATEWAY_TIMEOUT_MS = 12_000;
-export const MAX_GATEWAY_INPUT_LENGTH = 12_000;
+export const OPENROUTER_BASE_URL = "https://174.138.16.223/openrouter/v1";
+export const OPENROUTER_URL =
+  "https://174.138.16.223/openrouter/v1/chat/completions";
+export const OPENROUTER_MODEL = "deepseek/deepseek-v4.1-flash";
+export const OPENROUTER_MAX_TOKENS = 450;
+export const OPENROUTER_REASONING_EFFORT = "none";
+export const OPENROUTER_REASONING_EXCLUDE = true;
+export const OPENROUTER_TIMEOUT_MS = 25_000;
+export const MAX_OPENROUTER_INPUT_LENGTH = 12_000;
 
-export type GatewayErrorCode =
+export type OpenRouterErrorCode =
   | "INVALID_REQUEST"
   | "CONFIGURATION_ERROR"
   | "PROVIDER_TIMEOUT"
   | "PROVIDER_BAD_REQUEST"
   | "PROVIDER_AUTH_ERROR"
   | "PROVIDER_ROUTE_ERROR"
+  | "PROVIDER_BUDGET_EXHAUSTED"
   | "PROVIDER_RATE_LIMITED"
   | "PROVIDER_UNAVAILABLE"
   | "PROVIDER_INVALID_RESPONSE";
 
-type GatewayError = {
-  code: GatewayErrorCode;
-  message: string;
-};
-
-export type GatewayUsage = ProviderUsage;
-
-export type GatewaySuccess = {
+export type OpenRouterSuccess = {
   ok: true;
+  provider: "openrouter";
   response: string;
-  model: typeof COGNITIO_GATEWAY_MODEL;
+  model: typeof OPENROUTER_MODEL;
   latencyMs: number;
-  usage: GatewayUsage | null;
-  upstream: string | null;
-  fallback: string | null;
+  usage: ProviderUsage | null;
 };
 
-export type GatewayFailure = {
+export type OpenRouterFailure = {
   ok: false;
-  error: GatewayError;
+  provider: "openrouter";
+  error: { code: OpenRouterErrorCode; message: string };
   latencyMs: number;
   providerStatus: number | null;
   retryAfter: string | null;
 };
 
-export type GatewayResult = GatewaySuccess | GatewayFailure;
+export type OpenRouterResult = OpenRouterSuccess | OpenRouterFailure;
 
-const errorMessages: Record<GatewayErrorCode, string> = {
+const errorMessages: Record<OpenRouterErrorCode, string> = {
   INVALID_REQUEST: "A valid input is required.",
   CONFIGURATION_ERROR: "The AI service is not configured.",
   PROVIDER_TIMEOUT: "The AI service timed out.",
   PROVIDER_BAD_REQUEST: "The AI service rejected the server request.",
   PROVIDER_AUTH_ERROR: "The AI service is not configured correctly.",
   PROVIDER_ROUTE_ERROR: "The AI service route is unavailable.",
+  PROVIDER_BUDGET_EXHAUSTED: "The AI service budget is exhausted.",
   PROVIDER_RATE_LIMITED: "The AI service is busy. Please try again later.",
   PROVIDER_UNAVAILABLE: "The AI service is temporarily unavailable.",
   PROVIDER_INVALID_RESPONSE: "The AI service returned an invalid response.",
@@ -71,27 +69,31 @@ function latencySince(startedAt: number): number {
 }
 
 function failure(
-  code: GatewayErrorCode,
+  code: OpenRouterErrorCode,
   startedAt: number,
   providerStatus: number | null = null,
-  retryAfter: string | null = null,
-): GatewayFailure {
+): OpenRouterFailure {
   return {
     ok: false,
+    provider: "openrouter",
     error: { code, message: errorMessages[code] },
     latencyMs: latencySince(startedAt),
     providerStatus,
-    retryAfter,
+    retryAfter: null,
   };
 }
 
-function errorCodeForStatus(status: number): GatewayErrorCode {
+function errorCodeForStatus(status: number): OpenRouterErrorCode {
   if (status === 400) {
     return "PROVIDER_BAD_REQUEST";
   }
 
   if (status === 401 || status === 403) {
     return "PROVIDER_AUTH_ERROR";
+  }
+
+  if (status === 402) {
+    return "PROVIDER_BUDGET_EXHAUSTED";
   }
 
   if (status === 404) {
@@ -107,7 +109,7 @@ function errorCodeForStatus(status: number): GatewayErrorCode {
 
 function errorCodeForEnvelope(
   body: Record<string, unknown>,
-): GatewayErrorCode | null {
+): OpenRouterErrorCode | null {
   const kind = classifyProviderErrorEnvelope(body);
 
   if (kind === "rate-limit") {
@@ -118,22 +120,26 @@ function errorCodeForEnvelope(
     return "PROVIDER_AUTH_ERROR";
   }
 
-  if (kind === "budget" || kind === "unavailable") {
+  if (kind === "budget") {
+    return "PROVIDER_BUDGET_EXHAUSTED";
+  }
+
+  if (kind === "unavailable") {
     return "PROVIDER_UNAVAILABLE";
   }
 
   return null;
 }
 
-export async function callCognitioGateway(
+export async function callOpenRouterGateway(
   input: string,
-): Promise<GatewayResult> {
+): Promise<OpenRouterResult> {
   const startedAt = Date.now();
   const normalizedInput = typeof input === "string" ? input.trim() : "";
 
   if (
     normalizedInput.length === 0 ||
-    normalizedInput.length > MAX_GATEWAY_INPUT_LENGTH
+    normalizedInput.length > MAX_OPENROUTER_INPUT_LENGTH
   ) {
     return failure("INVALID_REQUEST", startedAt);
   }
@@ -149,22 +155,27 @@ export async function callCognitioGateway(
   const timeout = setTimeout(() => {
     timedOut = true;
     controller.abort();
-  }, GATEWAY_TIMEOUT_MS);
+  }, OPENROUTER_TIMEOUT_MS);
 
   try {
     let providerResponse: Response;
 
     try {
-      providerResponse = await fetch(COGNITIO_GATEWAY_URL, {
+      providerResponse = await fetch(OPENROUTER_URL, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${gatewayKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: COGNITIO_GATEWAY_MODEL,
+          model: OPENROUTER_MODEL,
           messages: [{ role: "user", content: normalizedInput }],
           stream: false,
+          max_tokens: OPENROUTER_MAX_TOKENS,
+          reasoning: {
+            effort: OPENROUTER_REASONING_EFFORT,
+            exclude: OPENROUTER_REASONING_EXCLUDE,
+          },
         }),
         signal: controller.signal,
       });
@@ -176,12 +187,18 @@ export async function callCognitioGateway(
     }
 
     if (!providerResponse.ok) {
-      return failure(
+      const failureResult = failure(
         errorCodeForStatus(providerResponse.status),
         startedAt,
         providerResponse.status,
-        sanitizeRetryAfter(providerResponse.headers.get("Retry-After")),
       );
+
+      return {
+        ...failureResult,
+        retryAfter: sanitizeRetryAfter(
+          providerResponse.headers.get("Retry-After"),
+        ),
+      };
     }
 
     let responseBody: unknown;
@@ -230,18 +247,11 @@ export async function callCognitioGateway(
 
     return {
       ok: true,
+      provider: "openrouter",
       response: normalizedContent,
-      model: COGNITIO_GATEWAY_MODEL,
+      model: OPENROUTER_MODEL,
       latencyMs: latencySince(startedAt),
       usage: parseProviderUsage(responseBody.usage),
-      upstream: sanitizeObservation(
-        providerResponse.headers.get("X-Gateway-Upstream"),
-        gatewayKey,
-      ),
-      fallback: sanitizeObservation(
-        providerResponse.headers.get("X-Gateway-Fallback"),
-        gatewayKey,
-      ),
     };
   } finally {
     clearTimeout(timeout);
