@@ -10,6 +10,10 @@ out/
 coverage/
 playwright-report/
 test-results/
+.vitest/
+vitest-results.*
+screenshots/
+test-screenshots/
 
 # Local environment files
 .env*
@@ -22,6 +26,8 @@ test-results/
 *.log
 *.tmp
 tmp/
+audit-output/
+audit-results.*
 
 # Local and assessment-only files
 .DS_Store
