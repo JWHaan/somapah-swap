@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Next.js output
+.next/
+out/
+*.tsbuildinfo
+
+# Test and coverage output
+coverage/
+playwright-report/
+test-results/
+
+# Local environment files
+.env*
+!.env.example
+
+# Vercel metadata
+.vercel/
+
+# Logs and temporary output
+*.log
+*.tmp
+tmp/
+
+# Local and assessment-only files
+.DS_Store
+conversation.md
+CognitioLabs-FDE-assessment-brief.pdf
+
+# Editor metadata
+.idea/
+.vscode/
