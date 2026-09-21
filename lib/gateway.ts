@@ -3,8 +3,6 @@ import "server-only";
 export const COGNITIO_GATEWAY_URL =
   "https://174.138.16.223/v1/chat/completions";
 export const COGNITIO_GATEWAY_MODEL = "gpt-5.6-luna";
-export const CANONICAL_MODEL_CHECK_INPUT =
-  "Reply with exactly: gateway connected";
 export const GATEWAY_TIMEOUT_MS = 12_000;
 export const MAX_GATEWAY_INPUT_LENGTH = 200;
 

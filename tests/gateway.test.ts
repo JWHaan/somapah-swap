@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
@@ -15,6 +17,7 @@ const forbiddenAuthorizationText = [
   "Bearer",
   "something",
 ].join(" ");
+const forbiddenLocalPath = ["", "Users", "private", "project"].join("/");
 
 function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
   return new Response(JSON.stringify(body), {
@@ -38,6 +41,15 @@ describe("Cognitio gateway adapter", () => {
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+  });
+
+  it("retains the Next.js server-only boundary", async () => {
+    const source = await readFile(
+      new URL("../lib/gateway.ts", import.meta.url),
+      "utf8",
+    );
+
+    expect(source.startsWith('import "server-only";')).toBe(true);
   });
 
   it("sends one fixed, non-streaming user message to the fixed endpoint", async () => {
@@ -200,7 +212,7 @@ describe("Cognitio gateway adapter", () => {
   it.each([
     "CLASSGW_KEY",
     forbiddenAuthorizationText,
-    "/Users/private/project",
+    forbiddenLocalPath,
     testKey,
   ])(
     "rejects provider text containing a forbidden public marker",

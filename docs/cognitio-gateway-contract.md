@@ -68,6 +68,9 @@ but this application uses Bearer authentication consistently.
 gpt-5.6-luna
 ```
 
+`gpt-5.6-luna` was available during both the local and production Vercel
+verification requests on September 21, 2026.
+
 Other documented permitted models include:
 
 ```text
@@ -114,8 +117,8 @@ No tools are used by this application.
 
 The endpoint is documented as OpenAI-compatible.
 
-The September 21, 2026 local Milestone 2 verification confirmed the
-generated-text path:
+The September 21, 2026 local and production Milestone 2 verifications confirmed
+the generated-text path:
 
 ```text
 choices[0].message.content
@@ -146,8 +149,10 @@ verification request.
 
 The gateway records input and output token usage from upstream responses.
 
-The September 21, 2026 local non-streaming response confirmed these numeric
-paths:
+### Raw Provider Fields
+
+The server-only adapter confirmed these numeric fields in the raw
+OpenAI-compatible provider response:
 
 ```text
 usage.prompt_tokens
@@ -155,8 +160,19 @@ usage.completion_tokens
 usage.total_tokens
 ```
 
-The public diagnostic response renames them to `input_tokens`,
-`output_tokens`, and `total_tokens`.
+### Temporary Application Normalization
+
+The temporary application verification response normalized the raw fields as
+follows:
+
+```text
+usage.prompt_tokens     -> usage.input_tokens
+usage.completion_tokens -> usage.output_tokens
+usage.total_tokens      -> usage.total_tokens
+```
+
+The raw gateway response used `prompt_tokens` and `completion_tokens`; it did
+not establish raw `input_tokens` or `output_tokens` fields.
 
 ## Streaming
 
@@ -175,6 +191,10 @@ Milestone 2 uses:
   "stream": false
 }
 ```
+
+Both verified requests used `stream: false` and returned a normal JSON
+response. The production request reached `POST /v1/chat/completions` through
+the deployed Vercel server route.
 
 ## Limits
 
@@ -341,7 +361,7 @@ student key or model permission.
 
 ## Application Consumption Rules
 
-- Exactly one gateway call per incoming verification request.
+- Exactly one gateway call per accepted adapter invocation.
 - No tools.
 - No agent loop.
 - No conversation history.
@@ -355,7 +375,9 @@ student key or model permission.
 - Request latency recorded.
 - Model output validated before use.
 
-## Sanitized Local Verification Evidence
+## Sanitized Verification Evidence
+
+### Local
 
 One deliberate request was sent through the local Next.js
 `POST /api/model-check` route on September 21, 2026.
@@ -377,14 +399,28 @@ The public response contained only `ok`, `response`, `model`, `latency_ms`,
 provider response, request identifier, complete response headers, stack trace,
 or local path was recorded.
 
-This evidence confirms the local server path only. Production verification
-remains pending Vercel environment configuration and redeployment.
+### Production
+
+One deliberate request was sent through the deployed Vercel server route on
+September 21, 2026.
+
+- HTTP status: `200`
+- Selected model: `gpt-5.6-luna`
+- Sanitized generated text: `gateway connected`
+- Observed application latency: `4058 milliseconds` (approximately `4.1 seconds`)
+- Normalized `usage.input_tokens`: `22`
+- Normalized `usage.output_tokens`: `6`
+- Normalized `usage.total_tokens`: `28`
+- `X-Gateway-Upstream`: unavailable
+- `X-Gateway-Fallback`: unavailable
+
+These counts and the latency are one observed verification result, not a
+guarantee for future requests. No credential, authorization value, raw provider
+payload, request identifier, complete response headers, stack trace, or local
+path was recorded.
 
 ## Temporary Diagnostic Route Lifecycle
 
-`POST /api/model-check` is a temporary Milestone 2 diagnostic route. It is not
-linked from marketplace navigation and must not be reused as the final search
-or Q&A endpoint. In production it accepts only the canonical verification input
-after trimming. After one successful Vercel production verification, record
-sanitized evidence and remove or disable this route before completing
-Milestone 3.
+The temporary application diagnostic route was removed after successful local
+and production verification. It was not reused as a search or Q&A endpoint, and
+Milestone 2 exposes no public model route.
