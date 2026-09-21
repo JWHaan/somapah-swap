@@ -114,15 +114,15 @@ No tools are used by this application.
 
 The endpoint is documented as OpenAI-compatible.
 
-Expected generated-text path:
+The September 21, 2026 local Milestone 2 verification confirmed the
+generated-text path:
 
 ```text
 choices[0].message.content
 ```
 
-The exact successful response body must be captured and confirmed through a
-sanitized Milestone 2 live request before relying on it without runtime
-validation.
+The application still validates this path at runtime and does not expose the
+raw provider response.
 
 ## Structured Output
 
@@ -146,8 +146,17 @@ verification request.
 
 The gateway records input and output token usage from upstream responses.
 
-The exact non-streaming Chat Completions usage response fields must be
-confirmed through the Milestone 2 live request.
+The September 21, 2026 local non-streaming response confirmed these numeric
+paths:
+
+```text
+usage.prompt_tokens
+usage.completion_tokens
+usage.total_tokens
+```
+
+The public diagnostic response renames them to `input_tokens`,
+`output_tokens`, and `total_tokens`.
 
 ## Streaming
 
@@ -213,6 +222,8 @@ Not documented.
 ```
 
 The application will enforce its own bounded timeout.
+
+Milestone 2 uses a 12-second application timeout with no retry.
 
 ## Error Behaviour
 
@@ -343,3 +354,37 @@ student key or model permission.
 - Token usage captured when exposed by the provider response.
 - Request latency recorded.
 - Model output validated before use.
+
+## Sanitized Local Verification Evidence
+
+One deliberate request was sent through the local Next.js
+`POST /api/model-check` route on September 21, 2026.
+
+- HTTP status: `200`
+- Selected model: `gpt-5.6-luna`
+- Sanitized generated text: `gateway connected`
+- Application-measured latency: approximately `1.6 seconds`
+- Input tokens: `22`
+- Output tokens: `6`
+- Total tokens: `28`
+- Sanitized upstream identifier: unavailable
+- Sanitized fallback category: unavailable
+- Provider requests: exactly one
+- Retries: none
+
+The public response contained only `ok`, `response`, `model`, `latency_ms`,
+`usage`, `upstream`, and `fallback`. No credential, authorization value, raw
+provider response, request identifier, complete response headers, stack trace,
+or local path was recorded.
+
+This evidence confirms the local server path only. Production verification
+remains pending Vercel environment configuration and redeployment.
+
+## Temporary Diagnostic Route Lifecycle
+
+`POST /api/model-check` is a temporary Milestone 2 diagnostic route. It is not
+linked from marketplace navigation and must not be reused as the final search
+or Q&A endpoint. In production it accepts only the canonical verification input
+after trimming. After one successful Vercel production verification, record
+sanitized evidence and remove or disable this route before completing
+Milestone 3.

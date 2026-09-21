@@ -11,9 +11,10 @@ export default function NotesPage() {
         <p className="eyebrow">Assessment notes</p>
         <h1>What is built so far</h1>
         <p>
-          This page documents the current marketplace milestone honestly. AI
-          integration, natural-language search, catalogue Q&amp;A, evaluation,
-          and deployment are still pending.
+          This page documents the current milestone honestly. The marketplace is
+          deployed, and a minimal server-side model connection has been verified
+          locally. Natural-language search and catalogue Q&amp;A are still
+          pending.
         </p>
       </header>
 
@@ -51,30 +52,34 @@ export default function NotesPage() {
             The app uses Next.js App Router and TypeScript. A validated local
             JSON catalogue supplies the browse page and item routes. Client
             components are limited to category filtering and the reserve
-            interaction.
+            interaction. A centralized server-only adapter owns the fixed
+            Cognitio gateway request and credential access.
           </p>
         </section>
 
         <section className="panel notes-section">
-          <h2>Implemented in this milestone</h2>
+          <h2>Implemented so far</h2>
           <ul>
             <li>Responsive browse and item-detail routes</li>
             <li>Deterministic category filters</li>
             <li>Runtime catalogue validation and focused tests</li>
             <li>Accessible simulated reserve feedback</li>
+            <li>Bounded, fixed-model server-side gateway adapter</li>
+            <li>Locally verified temporary diagnostic route</li>
           </ul>
         </section>
 
         <section className="panel notes-section">
           <h2>Pending AI work</h2>
           <p>
-            <span className="status-badge">Not implemented yet</span>
+            <span className="status-badge">Gateway connection only</span>
           </p>
           <p>
-            The Cognitio gateway, natural-language search, keyword fallback,
-            catalogue Q&amp;A, citation validation, and model evaluation will be
-            addressed in later milestones after the exact gateway contract is
-            available.
+            Natural-language search, keyword fallback, catalogue Q&amp;A,
+            grounding, citation validation, and model evaluation are not
+            implemented. The diagnostic route is temporary, is not linked from
+            marketplace navigation, and will not become the final search or
+            Q&amp;A API.
           </p>
         </section>
 
@@ -82,8 +87,9 @@ export default function NotesPage() {
           <h2>Known limitations</h2>
           <p>
             The catalogue is fixed, reserve is non-persistent, no seller can
-            respond, and this version has not been deployed. Pickup and meetup
-            availability are only the seller-provided seeded statements.
+            respond, and production model verification is pending Vercel
+            configuration and redeployment. Pickup and meetup availability are
+            only the seller-provided seeded statements.
           </p>
         </section>
       </div>
