@@ -1,0 +1,222 @@
+[
+  {
+    "name": "price-constrained product discovery",
+    "input": "fan under $30",
+    "group": "search",
+    "ambiguity": "specified",
+    "expected_intent": "search",
+    "expected_reason": "search-constraint",
+    "expected_endpoint": "/api/search",
+    "expected_endpoint_calls": 1,
+    "expected_provider_calls": 0
+  },
+  {
+    "name": "leading discovery verb",
+    "input": "show tech items",
+    "group": "search",
+    "ambiguity": "specified",
+    "expected_intent": "search",
+    "expected_reason": "discovery-language",
+    "expected_endpoint": "/api/search",
+    "expected_endpoint_calls": 1,
+    "expected_provider_calls": 0
+  },
+  {
+    "name": "purpose discovery",
+    "input": "something to raise my laptop",
+    "group": "search",
+    "ambiguity": "specified",
+    "expected_intent": "search",
+    "expected_reason": "discovery-language",
+    "expected_endpoint": "/api/search",
+    "expected_endpoint_calls": 1,
+    "expected_provider_calls": 0
+  },
+  {
+    "name": "condition-constrained product",
+    "input": "used iPad for sketching",
+    "group": "search",
+    "ambiguity": "specified",
+    "expected_intent": "search",
+    "expected_reason": "search-constraint",
+    "expected_endpoint": "/api/search",
+    "expected_endpoint_calls": 1,
+    "expected_provider_calls": 0
+  },
+  {
+    "name": "superlative without question structure",
+    "input": "best item for studying",
+    "group": "search",
+    "ambiguity": "specified",
+    "expected_intent": "search",
+    "expected_reason": "default-search",
+    "expected_endpoint": "/api/search",
+    "expected_endpoint_calls": 1,
+    "expected_provider_calls": 0
+  },
+  {
+    "name": "pickup-constrained concept",
+    "input": "monitor I can carry toward the MRT",
+    "group": "search",
+    "ambiguity": "specified",
+    "expected_intent": "search",
+    "expected_reason": "default-search",
+    "expected_endpoint": "/api/search",
+    "expected_endpoint_calls": 1,
+    "expected_provider_calls": 0
+  },
+  {
+    "name": "seller-note concept",
+    "input": "Arduino board left over from prototyping",
+    "group": "search",
+    "ambiguity": "specified",
+    "expected_intent": "search",
+    "expected_reason": "default-search",
+    "expected_endpoint": "/api/search",
+    "expected_endpoint_calls": 1,
+    "expected_provider_calls": 0
+  },
+  {
+    "name": "missing-fact question",
+    "input": "What is the iPad battery health?",
+    "group": "ask",
+    "ambiguity": "specified",
+    "expected_intent": "ask",
+    "expected_reason": "question-structure",
+    "expected_endpoint": "/api/ask",
+    "expected_endpoint_calls": 1,
+    "expected_provider_calls": 0
+  },
+  {
+    "name": "unconfirmed-feature question",
+    "input": "Does the Keychron Bluetooth work?",
+    "group": "ask",
+    "ambiguity": "specified",
+    "expected_intent": "ask",
+    "expected_reason": "question-structure",
+    "expected_endpoint": "/api/ask",
+    "expected_endpoint_calls": 1,
+    "expected_provider_calls": 0
+  },
+  {
+    "name": "comparison with punctuation",
+    "input": "Compare the desk and laptop stand.",
+    "group": "ask",
+    "ambiguity": "specified",
+    "expected_intent": "ask",
+    "expected_reason": "comparison-language",
+    "expected_endpoint": "/api/ask",
+    "expected_endpoint_calls": 1,
+    "expected_provider_calls": 0
+  },
+  {
+    "name": "accessory-inclusion question",
+    "input": "Which drawing device includes a pen?",
+    "group": "ask",
+    "ambiguity": "specified",
+    "expected_intent": "ask",
+    "expected_reason": "question-structure",
+    "expected_endpoint": "/api/ask",
+    "expected_endpoint_calls": 1,
+    "expected_provider_calls": 0
+  },
+  {
+    "name": "capitalised superlative question",
+    "input": "Which item is best for studying?",
+    "group": "ask",
+    "ambiguity": "specified",
+    "expected_intent": "ask",
+    "expected_reason": "question-structure",
+    "expected_endpoint": "/api/ask",
+    "expected_endpoint_calls": 1,
+    "expected_provider_calls": 0
+  },
+  {
+    "name": "deterministic accessory fact",
+    "input": "What comes with the calculator?",
+    "group": "ask",
+    "ambiguity": "specified",
+    "expected_intent": "ask",
+    "expected_reason": "question-structure",
+    "expected_endpoint": "/api/ask",
+    "expected_endpoint_calls": 1,
+    "expected_provider_calls": 0
+  },
+  {
+    "name": "deterministic pickup fact",
+    "input": "Where can I collect the monitor?",
+    "group": "ask",
+    "ambiguity": "specified",
+    "expected_intent": "ask",
+    "expected_reason": "question-structure",
+    "expected_endpoint": "/api/ask",
+    "expected_endpoint_calls": 1,
+    "expected_provider_calls": 0
+  },
+  {
+    "name": "bare product noun",
+    "input": "laptop",
+    "group": "ambiguous",
+    "ambiguity": "defaults-to-search",
+    "expected_intent": "search",
+    "expected_reason": "default-search",
+    "expected_endpoint": "/api/search",
+    "expected_endpoint_calls": 1,
+    "expected_provider_calls": 0
+  },
+  {
+    "name": "vague discovery",
+    "input": "something useful",
+    "group": "ambiguous",
+    "ambiguity": "defaults-to-search",
+    "expected_intent": "search",
+    "expected_reason": "discovery-language",
+    "expected_endpoint": "/api/search",
+    "expected_endpoint_calls": 1,
+    "expected_provider_calls": 0
+  },
+  {
+    "name": "discovery language with a question mark",
+    "input": "show tech items?",
+    "group": "ambiguous",
+    "ambiguity": "leading-discovery-verb-wins",
+    "expected_intent": "search",
+    "expected_reason": "discovery-language",
+    "expected_endpoint": "/api/search",
+    "expected_endpoint_calls": 1,
+    "expected_provider_calls": 0
+  },
+  {
+    "name": "comparison phrase without punctuation",
+    "input": "compare the desk and laptop stand",
+    "group": "ambiguous",
+    "ambiguity": "specified",
+    "expected_intent": "ask",
+    "expected_reason": "comparison-language",
+    "expected_endpoint": "/api/ask",
+    "expected_endpoint_calls": 1,
+    "expected_provider_calls": 0
+  },
+  {
+    "name": "whitespace-only input",
+    "input": "   ",
+    "group": "invalid",
+    "ambiguity": "rejected-locally",
+    "expected_intent": null,
+    "expected_reason": null,
+    "expected_endpoint": null,
+    "expected_endpoint_calls": 0,
+    "expected_provider_calls": 0
+  },
+  {
+    "name": "input above the client limit",
+    "input": "used xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "group": "invalid",
+    "ambiguity": "rejected-locally",
+    "expected_intent": null,
+    "expected_reason": null,
+    "expected_endpoint": null,
+    "expected_endpoint_calls": 0,
+    "expected_provider_calls": 0
+  }
+]

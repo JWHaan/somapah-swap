@@ -285,11 +285,20 @@ export async function answerCatalogueSearch(
     };
   }
 
-  const outcome = await dependencies.reranker({
-    parsed,
-    candidates,
-    catalogue,
-  });
+  // A reranker that throws (rather than returning { ok: false }) must not
+  // escape the orchestrator: the provider adapter normalizes its own failures,
+  // and anything that still throws degrades to catalogue keyword matching.
+  let outcome: SearchRerankerOutcome;
+
+  try {
+    outcome = await dependencies.reranker({
+      parsed,
+      candidates,
+      catalogue,
+    });
+  } catch {
+    outcome = { ok: false };
+  }
 
   if (outcome.ok) {
     const enforced = enforceRerankedResults(

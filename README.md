@@ -33,10 +33,26 @@ npm run format:check
 npm run lint
 npm run typecheck
 npm test -- --run
+npm run eval
 npx playwright install chromium
 npm run test:e2e -- --project=mobile-chromium
 npm run build
 ```
+
+`npm run eval` is the consolidated release evaluation. It runs deterministic and
+mocked suites only — intent routing, Q&A decisions and grounding, missing facts,
+search decisions and relevance, hard constraints, provider-call counts, ID and
+citation validation, fallback, no-match, retrieval regressions, catalogue-growth
+regressions, and the computed release metrics. It never contacts Cognitio,
+OpenRouter, or any live model endpoint.
+
+### Production
+
+- Public URL: <https://somapah-swap.vercel.app>
+- `/` — public homepage with the unified helper
+- `/notes` — public assessment write-up
+- `POST /api/search` — listing discovery
+- `POST /api/ask` — catalogue questions
 
 ## Deploying to Vercel
 
@@ -94,6 +110,13 @@ npm run build
 - There is no distributed rate limiting. A public deployment could be called
   repeatedly, so request limits and per-IP throttling are a known production
   gap.
+- Provider availability is not guaranteed. A model-backed comparison can time
+  out and fall back to the deterministic summary.
+- Calculator inclusion questions ("What comes with the calculator?") are
+  answered deterministically from the authoritative `includes` field, citing
+  only `calc-fx-07`.
+- All 15 listings are seeded demonstration data. Reserve is simulated, no
+  payment is taken, and no real seller is contacted.
 
 ## Catalogue Q&A architecture
 
@@ -213,6 +236,32 @@ listings but exceeded the 25-second provider timeout, so it returned
 `mode: "fallback"` with zero retries and the same two validated citations. The
 application is correct and safe in both outcomes; AI comparison is not
 guaranteed to complete.
+
+## Reviewer walkthrough
+
+1. Open <https://somapah-swap.vercel.app> on a phone.
+2. Confirm one helper input is visible; the old separate search and question
+   boxes are gone.
+3. Press **Dorm** and confirm six seeded listings.
+4. Submit `fan under $30` — authoritative search cards appear, routed to
+   `/api/search` only.
+5. Submit `something to raise my laptop` — the laptop stand appears
+   deterministically with no provider call.
+6. Submit `gaming PC under $100` — a no-match state appears with no unrelated
+   products.
+7. Submit `Does the iPad include an Apple Pencil?` — a deterministic grounded
+   answer.
+8. Submit `What is the iPad health?` → use `What is the iPad battery health?` —
+   the assistant states the listing does not say.
+9. Optionally submit one grounded comparison: `Compare the folding desk and
+laptop stand for a small hostel room.` This is the only step that may spend
+   provider allowance, and it may fall back safely if the provider is slow.
+10. Follow a cited listing link to its local `/item/[id]` page.
+11. Trigger **Reserve (simulated)** and confirm the honest no-seller message.
+12. Open `/notes` and review architecture, evaluation, resilience, and
+    limitations.
+
+Keep model-backed requests to at most one per review.
 
 ## Catalogue assistant API
 

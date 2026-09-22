@@ -61,6 +61,68 @@ describe("deterministic price semantics", () => {
     const { contradictory } = parseSearchQuery("over $100 and under $20");
     expect(contradictory).toBe(true);
   });
+
+  it.each([
+    "under $30",
+    "under sgd 30",
+    "under 30 dollars",
+    "below $30",
+    "less than $30",
+    "at most $30",
+    "$30 or less",
+    "up to $30",
+    "over $30",
+    "above $30",
+    "at least $30",
+  ])(
+    "keeps price-comparator filler out of the lexical terms for %s",
+    (query) => {
+      const { lexicalTerms } = parseSearchQuery(query);
+      const residue = [
+        "under",
+        "below",
+        "less",
+        "than",
+        "at",
+        "most",
+        "up",
+        "over",
+        "above",
+        "least",
+        "or",
+        "more",
+      ];
+
+      for (const word of residue) {
+        expect(lexicalTerms).not.toContain(word);
+      }
+    },
+  );
+
+  it.each([
+    ["under $30", "max", 30, "lt"],
+    ["below $30", "max", 30, "lt"],
+    ["less than $30", "max", 30, "lt"],
+    ["at most $30", "max", 30, "lte"],
+    ["$30 or less", "max", 30, "lte"],
+    ["up to $30", "max", 30, "lte"],
+    ["over $30", "min", 30, "gt"],
+    ["above $30", "min", 30, "gt"],
+    ["at least $30", "min", 30, "gte"],
+  ] as const)(
+    "keeps the exact bound for %s",
+    (query, bound, value, operator) => {
+      const { constraints } = parseSearchQuery(query);
+
+      if (bound === "max") {
+        expect(constraints.price?.max).toEqual({ valueSgd: value, operator });
+        expect(constraints.price?.min).toBeUndefined();
+      } else {
+        expect(constraints.price?.min).toEqual({ valueSgd: value, operator });
+        expect(constraints.price?.max).toBeUndefined();
+      }
+    },
+  );
 });
 
 describe("deterministic category, condition, concept extraction", () => {

@@ -12,7 +12,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "eval": "vitest run tests/intent-routing-evaluation.test.ts tests/qa-evaluation.test.ts tests/calculator-retrieval.test.ts tests/catalogue-qa.test.ts tests/search-evaluation.test.ts tests/search-query.test.ts tests/search-retrieval.test.ts tests/retrieval.test.ts tests/catalogue-growth.test.ts tests/release-metrics.test.ts tests/milestone3-characterization.test.ts"
   },
   "dependencies": {
     "next": "16.3.5",

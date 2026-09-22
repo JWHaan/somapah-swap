@@ -96,8 +96,10 @@
     "decision": "ai-rerank",
     "mode": "ai-reranked",
     "providerCalls": 1,
-    "prohibitedIds": [],
-    "constraints": "fuzzy suitability, multiple candidates"
+    "prohibitedIds": ["fan-hostel-01", "fridge-mini-03"],
+    "constraints": "fuzzy study suitability; post-correction evidence profiles keep the fan and fridge out and do not treat compactness as a confirmed catalogue fact",
+    "allowedIds": ["desk-small-05", "lamp-desk-02", "laptop-stand-15"],
+    "expectedTop": "desk-small-05"
   },
   {
     "query": "best option for a hostel workspace",
@@ -166,5 +168,97 @@
     "providerCalls": 0,
     "prohibitedIds": ["keyboard-mech-12"],
     "constraints": "confirmed feature no listing establishes"
+  },
+  {
+    "query": "a screen for coding",
+    "group": "ai",
+    "decision": "ai-rerank",
+    "mode": "ai-reranked",
+    "providerCalls": 1,
+    "expectedTop": "monitor-24-11",
+    "allowedIds": ["monitor-24-11", "lamp-desk-02", "desk-small-05"],
+    "prohibitedIds": [],
+    "constraints": "fuzzy purpose, multi-candidate rerank"
+  },
+  {
+    "query": "under $30",
+    "group": "deterministic",
+    "decision": "deterministic-results",
+    "mode": "deterministic",
+    "providerCalls": 0,
+    "prohibitedIds": ["ipad-sketch-10"],
+    "constraints": "exact price max bound with no product concept; comparator filler must not leak into lexical terms"
+  },
+  {
+    "query": "below $30",
+    "group": "deterministic",
+    "decision": "deterministic-results",
+    "mode": "deterministic",
+    "providerCalls": 0,
+    "prohibitedIds": ["ipad-sketch-10"],
+    "constraints": "exact price max bound with no product concept; comparator filler must not leak into lexical terms"
+  },
+  {
+    "query": "less than $30",
+    "group": "deterministic",
+    "decision": "deterministic-results",
+    "mode": "deterministic",
+    "providerCalls": 0,
+    "prohibitedIds": ["ipad-sketch-10"],
+    "constraints": "exact price max bound with no product concept; comparator filler must not leak into lexical terms"
+  },
+  {
+    "query": "at most $30",
+    "group": "deterministic",
+    "decision": "deterministic-results",
+    "mode": "deterministic",
+    "providerCalls": 0,
+    "prohibitedIds": ["ipad-sketch-10"],
+    "constraints": "exact price max bound with no product concept; comparator filler must not leak into lexical terms"
+  },
+  {
+    "query": "$30 or less",
+    "group": "deterministic",
+    "decision": "deterministic-results",
+    "mode": "deterministic",
+    "providerCalls": 0,
+    "prohibitedIds": ["monitor-24-11"],
+    "constraints": "exact price max bound with no product concept; comparator filler must not leak into lexical terms"
+  },
+  {
+    "query": "up to $30",
+    "group": "deterministic",
+    "decision": "deterministic-results",
+    "mode": "deterministic",
+    "providerCalls": 0,
+    "prohibitedIds": ["ipad-sketch-10"],
+    "constraints": "exact price max bound with no product concept; comparator filler must not leak into lexical terms"
+  },
+  {
+    "query": "over $30",
+    "group": "deterministic",
+    "decision": "deterministic-results",
+    "mode": "deterministic",
+    "providerCalls": 0,
+    "prohibitedIds": ["drying-rack-04"],
+    "constraints": "exact price min bound with no product concept; comparator filler must not leak into lexical terms"
+  },
+  {
+    "query": "above $30",
+    "group": "deterministic",
+    "decision": "deterministic-results",
+    "mode": "deterministic",
+    "providerCalls": 0,
+    "prohibitedIds": ["drying-rack-04"],
+    "constraints": "exact price min bound with no product concept; comparator filler must not leak into lexical terms"
+  },
+  {
+    "query": "at least $30",
+    "group": "deterministic",
+    "decision": "deterministic-results",
+    "mode": "deterministic",
+    "providerCalls": 0,
+    "prohibitedIds": ["book-design-09"],
+    "constraints": "exact price min bound with no product concept; comparator filler must not leak into lexical terms"
   }
 ]

@@ -3,7 +3,11 @@
 import { useId, useMemo, useRef, useState } from "react";
 
 import { ListingCard } from "@/components/ListingCard";
-import { classifyAssistantIntent } from "@/lib/assistant-intent";
+import {
+  MAX_HELPER_INPUT_LENGTH,
+  MIN_HELPER_INPUT_LENGTH,
+  classifyAssistantIntent,
+} from "@/lib/assistant-intent";
 import {
   filterListingsByCategory,
   type CategoryFilter,
@@ -17,8 +21,6 @@ const categories: Array<{ label: string; value: CategoryFilter }> = [
   { label: "Tech", value: "tech" },
 ];
 
-const MIN_INPUT_LENGTH = 3;
-const MAX_QUESTION_LENGTH = 500;
 const MAX_SEARCH_LENGTH = 300;
 
 const searchErrorMessage =
@@ -312,10 +314,10 @@ export function CatalogueHelper({ listings }: CatalogueHelperProps) {
     event.preventDefault();
     const trimmed = input.trim();
 
-    if (trimmed.length < MIN_INPUT_LENGTH) {
+    if (trimmed.length < MIN_HELPER_INPUT_LENGTH) {
       setStatus("error");
       setErrorMessage(
-        `Enter at least ${MIN_INPUT_LENGTH} characters so the catalogue can help.`,
+        `Enter at least ${MIN_HELPER_INPUT_LENGTH} characters so the catalogue can help.`,
       );
       return;
     }
@@ -385,7 +387,7 @@ export function CatalogueHelper({ listings }: CatalogueHelperProps) {
             aria-describedby={helpId}
             className="search-input"
             id={inputId}
-            maxLength={MAX_QUESTION_LENGTH}
+            maxLength={MAX_HELPER_INPUT_LENGTH}
             onChange={(event) => setInput(event.target.value)}
             placeholder="Try “fan under $30” or “Does the iPad include a pencil?”"
             type="text"

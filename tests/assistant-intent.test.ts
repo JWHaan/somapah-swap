@@ -110,6 +110,30 @@ describe("unified catalogue helper intent routing", () => {
   });
 
   it.each([
+    "show tech items?",
+    "show me the iPad?",
+    "find me a fan?",
+    "browse dorm items?",
+    "list tech items?",
+  ])(
+    "keeps a leading discovery verb on the search path even with a question mark: %j",
+    (input) => {
+      expect(classifyAssistantIntent(input)).toEqual({
+        intent: "search",
+        reason: "discovery-language",
+      });
+    },
+  );
+
+  it.each([
+    "Can you show me the monitor price?",
+    "Does the Keychron Bluetooth work?",
+    "Which drawing device includes a pen?",
+  ])("still routes a genuine question to ask: %j", (input) => {
+    expect(classifyAssistantIntent(input).intent).toBe("ask");
+  });
+
+  it.each([
     ["course books", "search-constraint"],
     ["dorm items", "search-constraint"],
     ["tech gear", "search-constraint"],

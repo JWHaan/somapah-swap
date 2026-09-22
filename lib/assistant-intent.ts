@@ -1,5 +1,17 @@
 export type AssistantIntent = "search" | "ask";
 
+export const MIN_HELPER_INPUT_LENGTH = 3;
+export const MAX_HELPER_INPUT_LENGTH = 500;
+
+export function isRoutableHelperInput(input: string): boolean {
+  const trimmed = typeof input === "string" ? input.trim() : "";
+
+  return (
+    trimmed.length >= MIN_HELPER_INPUT_LENGTH &&
+    trimmed.length <= MAX_HELPER_INPUT_LENGTH
+  );
+}
+
 export type IntentReason =
   | "question-structure"
   | "comparison-language"
@@ -64,6 +76,12 @@ const discoveryPatterns = [
   /\b(?:i need|i want|im looking for|help me find|options?|ideas?)\b/,
 ];
 
+// A leading discovery verb is a stronger signal than a trailing question mark:
+// "show tech items?" is a browse request that happens to be punctuated as a
+// question. A question word at the start still wins, so "Can you show me the
+// monitor price?" stays on the Q&A path.
+const leadingDiscoveryPattern = /^(?:show|browse|list|display|find)\b/;
+
 const priceConstraintPatterns = [
   /\bs?(?:gd)?\s*\$\s*\d/i,
   /\b(?:under|below|less than|at most|up to|over|above|at least|more than|max|maximum|budget of|around|about)\s+(?:s\$|sgd\s*|\$)?\s*\d/i,
@@ -102,6 +120,10 @@ export function classifyAssistantIntent(input: string): IntentDecision {
 
   if (matches(comparisonPatterns, normalized)) {
     return { intent: "ask", reason: "comparison-language" };
+  }
+
+  if (leadingDiscoveryPattern.test(normalized)) {
+    return { intent: "search", reason: "discovery-language" };
   }
 
   if (hasQuestionStructure(normalized, original)) {

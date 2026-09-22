@@ -80,6 +80,7 @@ const stopWords = new Set([
 
 const synonymGroups = [
   ["bike", "bicycle"],
+  ["calculator", "casio"],
   ["cool", "cools", "cooling", "breeze", "fan"],
   ["dorm", "hostel"],
   ["fridge", "refrigerator"],
@@ -99,6 +100,7 @@ const productNouns = new Set([
   "brick",
   "cable",
   "calculator",
+  "casio",
   "case",
   "desk",
   "dongle",
@@ -268,11 +270,19 @@ function scoreListing(
   score += directHeadScore;
   score += directBodyMatches * 3;
   const synonymHeadMatches = overlapScore(synonymTerms, titleHeads, 1);
+  // A product-family alias in the title head is a full product signal, so it
+  // clears the relevance floor rather than sitting just below it. Weak
+  // contextual synonyms keep the lower weight.
+  const productSynonymHeadMatches = overlapScore(
+    productTermsOnly(synonymTerms),
+    titleHeads,
+    1,
+  );
   const productHeadMatches =
     overlapScore(namedProductTerms, titleHeads, 1) +
     overlapScore(namedProductSynonyms, titleHeads, 1);
 
-  score += synonymHeadMatches * 3;
+  score += synonymHeadMatches * 3 + productSynonymHeadMatches;
   score += overlapScore(synonymTerms, fieldTerms(listing.title), 1);
   score += overlapScore(directTerms, fieldTerms(listing.category), 4);
   score += overlapScore(synonymTerms, fieldTerms(listing.category), 1);

@@ -286,6 +286,86 @@ export default function NotesPage() {
         </section>
 
         <section className="panel notes-section">
+          <h2>Release evaluation, 23 September 2026</h2>
+          <p>
+            I consolidated the deterministic and mocked suites into one command,
+            <code>npm run eval</code>, which never contacts a provider. Across{" "}
+            <strong>20 intent-routing fixtures</strong>,{" "}
+            <strong>24 catalogue Q&amp;A fixtures,</strong> and{" "}
+            <strong>27 search fixtures</strong>, every scored case passes:
+            routing 100%, Q&amp;A 100%, and search 100%.
+          </p>
+          <ul>
+            <li>
+              81.5% of search fixtures are resolved deterministically with zero
+              provider calls; 18.5% are genuinely model-worthy and make exactly
+              one call.
+            </li>
+            <li>
+              Zero-provider-call fixtures and exactly-one-call fixtures both
+              hold at 100%. No retries, no repair calls, no provider or model
+              switching, no tools, and no endpoint fall-through.
+            </li>
+            <li>
+              Missing-fact accuracy, off-topic and adversarial rejection, and
+              no-match accuracy are all 100% across their fixtures.
+            </li>
+            <li>
+              Invalid listing IDs and invalid citations are rejected at 100%,
+              and the whole answer is discarded rather than partially shown.
+            </li>
+            <li>
+              Expected search results appear in the top three in 100% of cases;
+              average candidate count is 2.2, maximum 6, and AI reranking is
+              capped at 4 accepted results.
+            </li>
+          </ul>
+          <p>
+            Provider resilience is evaluated with mocks only: timeout, rate
+            limit, authentication failure, unavailable provider, an HTTP 200
+            error envelope, malformed JSON, empty content, fenced JSON, unknown
+            IDs, self-negating reasons, unsupported claims, and ungrounded
+            measurements. Q&amp;A degrades to a grounded deterministic fallback
+            and search degrades to catalogue keyword matching, with exactly one
+            provider call in every case.
+          </p>
+          <p>
+            Catalogue-growth regressions use synthetic records only;{" "}
+            <code>data/listings.json</code> is never modified. Sixteen checks
+            confirm that candidate counts stay bounded, hard price, category,
+            condition, accessory, and feature constraints still apply to new
+            records, unconfirmed features never qualify, results stay
+            candidate-bound, and public response schemas do not change.
+          </p>
+          <p>
+            Two defects surfaced during this evaluation and were fixed with
+            tests: price-comparator filler such as “below” and “less than” was
+            leaking into lexical terms, so eight of nine price phrasings
+            returned no match instead of applying the bound; and a reranker that
+            threw escaped the search orchestrator instead of degrading to
+            catalogue matching.
+          </p>
+          <p>
+            One gap found during this evaluation was fixed rather than left
+            open. Q&amp;A lexical retrieval had no <code>calculator</code>/
+            <code>casio</code> alias, so “What comes with the calculator?”
+            declined instead of naming the included case. The calculator family
+            now resolves through a general product-alias rule, and inclusion
+            questions are answered deterministically from the authoritative{" "}
+            <code>includes</code> field. Six strict fixtures cover the phrasing
+            variants, and a boundary fixture keeps unrelated “case” questions
+            from resolving to the calculator.
+          </p>
+          <p>
+            Privacy and security were re-audited: the credential is absent from
+            tracked files, the browser bundle, the server build, and reachable
+            history; no provider payload, reasoning text, request identifier, or
+            local path is committed; and no client component imports a provider
+            adapter.
+          </p>
+        </section>
+
+        <section className="panel notes-section">
           <h2>Known issues and unfinished work</h2>
           <p>
             <span className="status-badge">Verified with caveats</span>

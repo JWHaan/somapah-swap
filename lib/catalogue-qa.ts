@@ -277,7 +277,9 @@ function deterministicSingleListingAnswer(
   }
 
   if (
-    /\b(?:include|includes|included|come with|comes with)\b/i.test(question)
+    /\b(?:include|includes|included|come with|comes with|accessor(?:y|ies)|accessories)\b/i.test(
+      question,
+    )
   ) {
     return responseFor({
       answer:
