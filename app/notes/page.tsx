@@ -131,7 +131,15 @@ export default function NotesPage() {
             <li>Raw request bodies over 2 KiB are refused before parsing.</li>
             <li>
               The model path makes at most one provider call, with a fixed model
-              and endpoint, no tools, no history, and a twelve-second timeout.
+              and endpoint, no tools, no history, and a 25-second provider
+              timeout. The <code>/api/ask</code> function is allowed a 30-second
+              maximum duration, which leaves bounded processing time after the
+              provider cutoff.
+            </li>
+            <li>
+              There is no automatic retry. A retry would add latency, could
+              still fail, and would consume the shared provider allowance
+              unpredictably.
             </li>
             <li>
               Timeouts, rate limits, malformed model output, and bad citations
@@ -204,18 +212,34 @@ export default function NotesPage() {
         <section className="panel notes-section">
           <h2>Known issues and unfinished work</h2>
           <p>
-            <span className="status-badge">Verified</span>
+            <span className="status-badge">Verified with caveats</span>
           </p>
           <p>
-            A controlled live check on 21 September 2026 returned a real
-            AI-backed answer. It finished with a stop reason, used 345 input and
-            238 completion tokens with zero reasoning tokens, and took about 3.1
-            seconds. It cited only the folding desk and the laptop stand, both
-            retrieved candidates, and listed what the catalogue does not
-            establish: dimensions, folded size, weight, exact laptop
-            compatibility, and whether either item fits a particular room. That
-            is one measurement, not a guarantee, and the gateway budget is
-            shared and finite.
+            Production has shown both outcomes for the same comparison question.
+            One request returned a real grounded answer: <code>mode: ai</code>,
+            finish reason <code>stop</code>, zero reasoning tokens, 238 visible
+            output tokens and 583 total tokens in roughly 3.2 seconds. It cited
+            only the folding desk and the laptop stand, both retrieved
+            candidates, and it named what the catalogue cannot establish:
+            dimensions, folded size, weight, exact laptop compatibility, and
+            whether either item suits a particular room.
+          </p>
+          <p>
+            A separate production request with the same question retrieved the
+            same two listings, but the provider did not answer before my
+            25-second cutoff. The function ran for about 25 seconds, aborted the
+            provider call, and returned <code>mode: fallback</code>: a
+            deterministic summary that still linked the folding desk and laptop
+            stand with their authoritative details. It finished inside the
+            30-second function limit.
+          </p>
+          <p>
+            That intermittent behaviour comes from upstream provider latency,
+            which I cannot control, not from retrieval or citation logic — both
+            requests selected the same two correct listings. Provider latency is
+            therefore an external production limitation, and the timeout
+            boundary is what makes it safe rather than invisible. The
+            deterministic catalogue answers never depend on the provider at all.
           </p>
           <p>
             Earlier attempts failed honestly before this worked: the default

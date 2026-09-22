@@ -375,3 +375,18 @@ Run: `git diff --check && git status --short && git diff --stat`
 Expected: only Milestone 3 design, implementation, tests, and documentation are
 present. Report the suggested commit message `feat: add grounded catalogue Q&A`
 without committing unless requested.
+
+---
+
+## Post-Implementation Provider Addendum
+
+The plan was written when Q&A used the default Cognitio adapter with
+`gpt-5.6-luna` and a twelve-second timeout. That adapter remains implemented and
+tested, but the live provider changed during verification: the default route's
+subscription share was exhausted, so Q&A moved to the explicit OpenRouter route
+with `deepseek/deepseek-v4.1-flash`, a `25_000 ms` timeout, and
+`reasoning: { effort: "none", exclude: true }`. The route declares
+`maxDuration = 30`. Every other constraint in this plan — the 2,048-byte body
+limit, 3–500 character questions, four normal and six broad candidates, the
+6,000-character preferred and 12,000-character hard prompt ceilings, exactly one
+provider request, no retries, and fail-closed citations — shipped unchanged.

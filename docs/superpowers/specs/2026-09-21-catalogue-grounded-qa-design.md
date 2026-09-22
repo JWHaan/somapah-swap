@@ -2,7 +2,8 @@
 
 **Date:** 21 September 2026  
 **Milestone:** 3 — value-gated, catalogue-grounded Q&A  
-**Status:** Approved for implementation
+**Status:** Approved for implementation and implemented; see the addendum below
+for the provider setting that changed during verification.
 
 ## Goal
 
@@ -351,3 +352,24 @@ comparison request is performed only after mocked tests and quality gates pass.
 model value gate, citation validation, safe fallback, evaluation results, and
 remaining absence of natural-language search. They will not include complete
 hidden prompts, secrets, raw provider responses, or internal security rules.
+
+## Implementation Addendum
+
+This design was written against the default Cognitio chat-completions adapter
+with `gpt-5.6-luna` and a twelve-second timeout. Two provider facts changed
+during implementation and verification; the design intent did not.
+
+1. The default route's subscription share was exhausted and its automatic
+   fallback returned an unusable HTTP 200 error envelope. Q&A therefore moved to
+   the gateway's explicit OpenRouter route with `deepseek/deepseek-v4.1-flash`,
+   which has a separate budget. The original GPT adapter is preserved behind the
+   same provider-independent interface in `lib/qa-provider.ts`.
+2. Reasoning on the OpenRouter route consumed the whole completion budget under
+   a `reasoning.max_tokens` cap, so reasoning is now disabled with
+   `reasoning: { effort: "none", exclude: true }`.
+
+The provider timeout is `25_000 ms` for the OpenRouter adapter, and
+`/api/ask` declares `maxDuration = 30`. The default GPT adapter keeps its
+twelve-second timeout. All other design decisions — deterministic value gating,
+bounded retrieval, one provider call, fail-closed citations, and deterministic
+fallback — were implemented as written.

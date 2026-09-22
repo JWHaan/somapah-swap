@@ -645,3 +645,51 @@ structured answer instead of being consumed by reasoning.
 This is one observed measurement, not a guarantee for future requests. No
 credential, Authorization value, raw provider payload, reasoning text, request
 identifier, account detail, internal prompt, or local path was recorded.
+
+### Production Observations
+
+Two production observations were recorded for the same comparison question
+through the deployed `POST /api/ask` route. They show both outcomes of the
+single-call policy under variable upstream latency.
+
+#### Successful production response
+
+| Field                 | Observed value                                             |
+| --------------------- | ---------------------------------------------------------- |
+| HTTP status           | `200`                                                      |
+| Public mode           | `ai`                                                       |
+| Candidate IDs         | `desk-small-05`, `laptop-stand-15`                         |
+| Cited IDs             | `desk-small-05`, `laptop-stand-15`                         |
+| Finish reason         | `stop`                                                     |
+| Reasoning tokens      | `0`                                                        |
+| Visible output tokens | `238`                                                      |
+| Total tokens          | `583`                                                      |
+| Route latency         | approximately `3.2 seconds`                                |
+| Output validation     | Passed; every citation validated against the retrieved set |
+
+The answer used only supplied catalogue facts and named what the catalogue could
+not establish, including dimensions, weight, folded or set-up footprint, device
+compatibility, cooling performance, and current availability.
+
+#### Production timeout
+
+| Field               | Observed value                                |
+| ------------------- | --------------------------------------------- |
+| HTTP status         | `200`                                         |
+| Public mode         | `fallback`                                    |
+| Candidate IDs       | `desk-small-05`, `laptop-stand-15`            |
+| Cited IDs           | `desk-small-05`, `laptop-stand-15`            |
+| Function execution  | approximately `25 seconds`                    |
+| Provider timeout    | `25_000 ms`, reached before a usable response |
+| Route `maxDuration` | `30 seconds`, not exceeded                    |
+| Retries             | `0`                                           |
+
+The application aborted the provider request at the 25-second boundary, did not
+retry, did not switch provider or model, made no repair call, and returned the
+grounded deterministic fallback. Retrieval and citation selection were
+unaffected: both outcomes selected the same two authoritative listings.
+
+The intermittent behaviour is caused by upstream provider latency, which the
+application cannot control. The 25-second provider cutoff and the 30-second
+route maximum keep that variability bounded while preserving a correct,
+grounded response.

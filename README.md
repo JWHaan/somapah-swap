@@ -70,6 +70,13 @@ npm run build
   provider-independent interface in `lib/qa-provider.ts`.
 - Deterministic questions make zero provider calls, and provider failures
   degrade to a grounded deterministic fallback.
+- The model path makes at most one provider call and never retries. The
+  OpenRouter request is cut off at 25 seconds, and `/api/ask` declares a
+  30-second `maxDuration`, so a slow provider still resolves to the fallback
+  inside the function limit.
+- Upstream provider latency varies. An AI comparison can complete, or can
+  time out and fall back, for the same question. The fallback is grounded and
+  still links the relevant local listings.
 - Natural-language search, search reranking, embeddings, caching, and
   authentication are not implemented.
 - There is no distributed rate limiting. A public deployment could be called
@@ -121,6 +128,12 @@ One controlled request through `POST /api/ask` returned `mode: "ai"` with
 `finish_reason: "stop"`, `345` input tokens, `238` completion tokens, `0`
 reasoning tokens, and `583` total tokens in `3163 ms`. This is one measurement,
 not a guarantee.
+
+A separate production request for the same comparison retrieved the same two
+listings but exceeded the 25-second provider timeout, so it returned
+`mode: "fallback"` with zero retries and the same two validated citations. The
+application is correct and safe in both outcomes; AI comparison is not
+guaranteed to complete.
 
 ## Catalogue assistant API
 
