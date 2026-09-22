@@ -63,6 +63,14 @@ export default function NotesPage() {
             </a>
           </li>
           <li>
+            <a href="#interface-and-themes">
+              Interface, themes, and accessibility
+            </a>
+          </li>
+          <li>
+            <a href="#what-i-would-build-next">What I would build next</a>
+          </li>
+          <li>
             <a href="#known-issues-and-unfinished-work">
               Known issues and unfinished work
             </a>
@@ -110,6 +118,15 @@ export default function NotesPage() {
 
         <section className="panel notes-section">
           <h2 id="architecture">Architecture</h2>
+          <p>
+            The repository carries three supporting documents:{" "}
+            <code>docs/architecture.md</code> for the final component boundaries
+            and trust model, <code>docs/evaluation.md</code> for fixture design
+            and the full metric table, and <code>docs/decisions/</code> for the
+            durable design records behind deterministic-first handling,
+            grounding, value-gated search, the unified input, and provider
+            resilience. This page is the narrative; those files are the detail.
+          </p>
           <p>
             Next.js App Router with TypeScript and a validated JSON catalogue.
             One homepage input answers both “find me listings” and “tell me
@@ -209,7 +226,7 @@ export default function NotesPage() {
             automatic fallback is not used.
           </p>
           <p>
-            GPT came first. During Milestone 2 I verified{" "}
+            GPT came first. The initial server-side integration verified{" "}
             <code>gpt-5.6-luna</code> through the default chat-completions
             route, locally and from the deployed site. Later, that route began
             answering with <code>X-Gateway-Fallback: window_share</code> because
@@ -350,7 +367,7 @@ export default function NotesPage() {
             I consolidated the deterministic and mocked suites into one command,
             <code>npm run eval</code>, which never contacts a provider. Across{" "}
             <strong>20 intent-routing fixtures</strong>,{" "}
-            <strong>24 catalogue Q&amp;A fixtures,</strong> and{" "}
+            <strong>30 catalogue Q&amp;A fixtures,</strong> and{" "}
             <strong>27 search fixtures</strong>, every scored case passes:
             routing 100%, Q&amp;A 100%, and search 100%.
           </p>
@@ -407,6 +424,11 @@ export default function NotesPage() {
               capped at 4 accepted results.
             </li>
           </ul>
+          <p>
+            The suite breakdown, fixture design, and the full metric table live
+            in <code>docs/evaluation.md</code>; this section records what the
+            numbers mean.
+          </p>
           <p>
             Provider resilience is evaluated with mocks only: timeout, rate
             limit, authentication failure, unavailable provider, an HTTP 200
@@ -498,6 +520,60 @@ export default function NotesPage() {
               buyer-facing copy for its result modes and three example chips
               that run through the same router and validation as typed input.
             </p>
+          </section>
+
+          <section className="panel notes-section">
+            <h2 id="what-i-would-build-next">What I would build next</h2>
+            <p>
+              In rough order of value per unit of risk. Nothing here is required
+              for the current demo, and none of it is started.
+            </p>
+            <ol>
+              <li>
+                <strong>Distributed rate limiting.</strong> A public
+                model-backed endpoint should be throttled per caller before it
+                is advertised. This is the single largest gap between the demo
+                and something I would let strangers hammer.
+              </li>
+              <li>
+                <strong>Item-page Q&amp;A.</strong> The API already accepts an
+                optional <code>item_id</code>, so the item page can pass context
+                without changing the route, retrieval, or response schema.
+              </li>
+              <li>
+                <strong>Database-backed retrieval.</strong> The lexical layer is
+                tuned for 15 records. Past a few hundred listings I would move
+                the catalogue into a database with full-text search, and only
+                consider embeddings if relevance measurements showed lexical
+                search plateauing.
+              </li>
+              <li>
+                <strong>Structured provider output.</strong> The application
+                validates JSON itself because the gateway does not document
+                native schema support. If that lands, the prompt and parser can
+                shrink.
+              </li>
+              <li>
+                <strong>
+                  A second live verification of corrected study retrieval.
+                </strong>
+                The post-correction behaviour is proven by deterministic and
+                mocked tests only. One controlled live request would close that
+                gap.
+              </li>
+              <li>
+                <strong>Device testing.</strong> Physical-phone checks and a
+                desktop Playwright project would turn the automated 375-pixel
+                evidence into a broader matrix.
+              </li>
+              <li>
+                <strong>
+                  Seller accounts, messaging, and real reservations.
+                </strong>
+                These need authentication, moderation, and a payment decision,
+                so they are a different product rather than a next increment.
+              </li>
+            </ol>
           </section>
 
           <h2 id="known-issues-and-unfinished-work">

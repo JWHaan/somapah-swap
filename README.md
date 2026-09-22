@@ -1,17 +1,80 @@
 # Somapah Swap
 
-Somapah Swap is a mobile-first second-hand marketplace demo for SUTD students.
-It provides a validated 15-item catalogue, category filters, item detail pages,
-a simulated reserve interaction, and an honest public `/notes` page.
+A mobile-first second-hand marketplace for SUTD students, with deterministic
+catalogue search and bounded, grounded AI assistance.
 
-Milestone 3 adds a value-gated, catalogue-grounded assistant on the home page. Milestone 4 adds value-gated hybrid natural-language catalogue search: exact constraints and uniquely supported matches are deterministic, while fuzzy ordering may make at most one server-side model call. Search results are always authoritative local listing cards, and invalid model output falls back to deterministic catalogue matching.
+**Production:** <https://somapah-swap.vercel.app>
 
-## Requirements
+## Why this exists
 
-- Node.js 20.9 or newer
-- npm
+SUTD students buy and sell used course, dorm, and tech gear in scattered group
+chats. Listings are hard to search, sellers repeat the same answers, and buyers
+cannot tell whether a detail is unknown or simply missing from the post.
 
-## Local development
+Somapah Swap is a small, focused answer to that: 15 seeded campus listings with
+search, item detail, a simulated reservation, and a catalogue assistant that
+answers only from the listing data. The assistant is built so that most questions
+never reach a model, and the ones that do are validated before anything is shown.
+
+## What buyers can do
+
+- Browse 15 seeded listings, one column on a phone.
+- Filter by category: all, course, dorm, tech.
+- Search in natural language, for example `fan under $30`.
+- Ask grounded catalogue questions, for example `Does the iPad include an Apple Pencil?`.
+- Ask for comparisons, for example `Compare the folding desk and laptop stand for a small hostel room.`
+- Open an item to read condition, defects, pickup, meetup window, and seller note.
+- Simulate a reservation. Nothing is charged and no seller is contacted.
+
+## How the catalogue helper works
+
+One input handles both listing discovery and catalogue questions. Local code
+decides which server endpoint a request belongs to; no model is used to classify
+it.
+
+```text
+input
+  → local intent routing            (no model call)
+  → deterministic handling          (no model call)
+  → bounded retrieval
+  → optional single model call
+  → validation
+  → authoritative UI
+```
+
+- **Deterministic first.** Scope rejection, exact facts, known gaps, price and
+  category filters, and no-match are handled in code.
+- **One call when it counts.** A comparison or fuzzy ranking makes at most one
+  provider request, with no retries and no repair calls.
+- **Authoritative records only.** Search results are rendered from
+  `data/listings.json` by ID. Model output can select and explain listings; it can
+  never create or rewrite one.
+- **Fail-closed validation.** Every returned and cited ID must exist in the
+  catalogue and inside the retrieved candidate set. A single invented, malformed,
+  or out-of-set citation discards the whole answer.
+- **Grounded fallback.** If the provider times out, errors, or returns unusable
+  output, the assistant returns a deterministic summary of the relevant listings
+  instead of an error or a guess.
+
+## Architecture
+
+Next.js App Router with TypeScript, deployed on Vercel.
+
+| Concern        | Implementation                                                       |
+| -------------- | -------------------------------------------------------------------- |
+| Catalogue      | `data/listings.json`, validated with Zod at import                   |
+| Intent routing | Local string analysis in `lib/assistant-intent.ts`                   |
+| Search         | Lexical retrieval plus optional one-call rerank                      |
+| Q&A            | Deterministic answer path plus optional one-call grounded generation |
+| Provider       | Server-only adapters behind the Cognitio gateway                     |
+| Tests          | Vitest for logic and routes, Playwright for the browser              |
+
+Both API routes validate strict request schemas, bound the raw body before
+parsing, and return sanitized errors. No provider module is reachable from client
+code. Full detail is in [`docs/architecture.md`](docs/architecture.md), and design
+rationale is recorded in [`docs/decisions/`](docs/decisions/).
+
+## Local setup
 
 ```bash
 npm ci
@@ -19,12 +82,16 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+`.env.local` holds the server-side gateway credential:
 
-Set `CLASSGW_KEY` in the ignored `.env.local` file when exercising server-only
-gateway code during local development. Provide the value only in that file or
-in the Vercel environment settings; never commit it. The credential is read only
-by server code and must never use a `NEXT_PUBLIC_` prefix.
+```text
+CLASSGW_KEY=
+```
+
+Set a real value locally or in the Vercel project settings. The variable is read
+only by server code, is never sent to the browser, and must not use a
+`NEXT_PUBLIC_` prefix. Deterministic search and Q&A work without it; only the
+model-backed paths need it.
 
 ## Validation
 
@@ -34,270 +101,73 @@ npm run lint
 npm run typecheck
 npm test -- --run
 npm run eval
-npx playwright install chromium
-npm run test:e2e -- --project=mobile-chromium
 npm run build
+npm run test:e2e -- --project=mobile-chromium
 ```
 
-`npm run eval` is the consolidated release evaluation. It runs deterministic and
-mocked suites only — intent routing, Q&A decisions and grounding, missing facts,
-search decisions and relevance, hard constraints, provider-call counts, ID and
-citation validation, fallback, no-match, retrieval regressions, catalogue-growth
-regressions, and the computed release metrics. It never contacts Cognitio,
-OpenRouter, or any live model endpoint.
+`npm run eval` is the consolidated evaluation: deterministic and mocked suites
+only, no provider contact.
 
-### Production
+## Evaluation summary
 
-- Public URL: <https://somapah-swap.vercel.app>
-- `/` — public homepage with the unified helper
-- `/notes` — public assessment write-up
-- `POST /api/search` — listing discovery
-- `POST /api/ask` — catalogue questions
+Current local verification:
 
-## Deploying to Vercel
+- 519 unit tests across 22 files.
+- 71 Playwright tests in one mobile project.
+- 241 evaluation tests across 11 files.
+- 30 Q&A fixtures, 27 search fixtures, and 20 intent-routing fixtures, all passing.
+- 81.5 percent of search fixtures resolve deterministically with zero provider
+  calls; 18.5 percent are model-worthy and make exactly one call.
+- Missing-fact accuracy, no-match accuracy, off-topic rejection, fallback
+  correctness, and invalid-ID and invalid-citation rejection all measure 100
+  percent across their fixtures.
 
-1. Push the repository to GitHub with `main` as the default branch.
-2. Import the repository into Vercel and confirm the detected framework is
-   Next.js.
-3. Keep the repository root (`./`) as the project root.
-4. Use `npm ci` as the install command and `npm run build` as the build
-   command.
-5. Keep the standard Next.js output settings. No `vercel.json` or database is
-   required.
-6. Add `CLASSGW_KEY` as a server-side Vercel environment variable for
-   Production and, if needed, Preview.
-7. Deploy, then verify `/`, `/notes`, valid item routes, and an invalid item
-   route in a private browser window and at phone width.
+Fixture design and the full metric table are in
+[`docs/evaluation.md`](docs/evaluation.md).
 
-## Current boundaries
+## Seeded and simulated boundaries
 
-- All listings are seeded in `data/listings.json`.
-- Reserve is simulated and never contacts a seller or takes payment.
-- `POST /api/ask` answers catalogue questions. It rejects unknown fields and
-  bodies over 2 KiB, and it never exposes provider metadata to the browser.
-- `POST /api/search` accepts a bounded natural-language query. Deterministic
-  constraints and uniquely supported catalogue matches make zero provider
-  calls; fuzzy multi-candidate ordering makes at most one server-side call.
-  Results contain validated IDs and short reasons, while the browser renders
-  all product details from the local catalogue.
-- The search provider uses the fixed OpenRouter route with
-  `deepseek/deepseek-v4.1-flash`, `max_tokens: 300`, disabled reasoning, an
-  8-second provider timeout, and a 12-second route `maxDuration`. Q&A keeps
-  its separate 450-token, 25-second, and 30-second policy.
-- Search provider failures, malformed output, invalid IDs, unsupported
-  reasons, or hard-constraint violations degrade to a useful deterministic
-  `keyword-fallback`. No-match is preferred to unrelated filler.
-- Search retrieval is lexical with general study/workspace, cooling, and
-  food-storage evidence profiles. Generic hostel, dorm, or small-room words
-  do not by themselves make every dorm listing relevant. Multi-intent queries
-  union the relevant profiles.
-- The assistant appears on the home page only, but `/api/ask` already accepts an
-  optional `item_id` so an item page can reuse it later without an API change.
-- Q&A uses the gateway's explicit OpenRouter route with
-  `deepseek/deepseek-v4.1-flash`. The GPT adapter is retained behind the same
-  provider-independent interface in `lib/qa-provider.ts`.
-- Deterministic questions make zero provider calls, and provider failures
-  degrade to a grounded deterministic fallback.
-- The model path makes at most one provider call and never retries. The
-  OpenRouter request is cut off at 25 seconds, and `/api/ask` declares a
-  30-second `maxDuration`, so a slow provider still resolves to the fallback
-  inside the function limit.
-- Upstream provider latency varies. An AI comparison can complete, or can
-  time out and fall back, for the same question. The fallback is grounded and
-  still links the relevant local listings.
-- Natural-language search remains lexical plus optional one-call reranking; embeddings,
-  caching, and authentication are not implemented.
-- There is no distributed rate limiting. A public deployment could be called
-  repeatedly, so request limits and per-IP throttling are a known production
-  gap.
-- Provider availability is not guaranteed. A model-backed comparison can time
-  out and fall back to the deterministic summary.
-- Calculator inclusion questions ("What comes with the calculator?") are
-  answered deterministically from the authoritative `includes` field, citing
-  only `calc-fx-07`.
-- All 15 listings are seeded demonstration data. Reserve is simulated, no
-  payment is taken, and no real seller is contacted.
+- All 15 listings are seeded demonstration records.
+- Reservation is simulated: no payment, no seller contact, no real hold.
+- Availability is whatever the seller wrote. Nothing is live.
+- There are no accounts, no messaging, and no payment flow.
 
-## Catalogue Q&A architecture
+## Known limitations
 
-`POST /api/ask` is deterministic-first:
-
-1. The route reads a bounded raw body and rejects unknown fields.
-2. A strict scope gate rejects off-topic, adversarial, and no-match questions.
-3. Simple facts, explicit exclusions, and missing facts are answered in code.
-4. Otherwise bounded lexical retrieval returns at most 4 candidates, or 6 for a
-   justified broad comparison.
-5. Only a question that needs comparison or explanation reaches the model, once.
-6. Model output must be strict JSON, and every cited ID is checked against the
-   retrieved candidate set before anything is shown.
-7. Provider errors, malformed output, or a bad citation fall back to a grounded
-   deterministic summary of the retrieved listings.
-
-Fail-closed citations mean an invented, external, path-like, or unretrieved ID
-invalidates the whole model answer rather than showing part of it.
-
-Bounded retrieval is lexical: exact item context, title phrases, head nouns, and
-explicit price or category constraints, with a relevance floor.
-
-## One homepage control
-
-The home page exposes a single control, "Find or ask about listings", instead of
-separate search and question boxes. `lib/assistant-intent.ts` classifies the
-wording locally with no model call:
-
-- comparisons, question structures, and fact requests go to `POST /api/ask`;
-- discovery wording, budgets, categories, and conditions go to `POST /api/search`;
-- anything ambiguous defaults to search.
-
-One submission reaches exactly one endpoint, the client never calls both, and it
-never falls through from one to the other. Search results keep the category
-chips and render authoritative cards; a grounded answer replaces the grid and
-hides the chips. Clearing the control returns to the default catalogue.
-
-Intent routing is deterministic local code with no model call. The helper is not
-a chatbot: there is no conversation history, no stored questions, no message
-bubbles, no regeneration control, and no multi-turn memory. Both routes keep
-their own validation and provider policy, and this consolidation changed no
-provider, model, endpoint, timeout, or token setting.
-
-## Natural-language search architecture
-
-`POST /api/search` is deterministic-first:
-
-1. The route reads a bounded strict request body.
-2. Deterministic parsing extracts category, condition, price operators,
-   product concepts, pickup/meetup terms, accessories, and evidence-sensitive
-   requirements.
-3. Hard constraints are applied before retrieval.
-4. Bounded lexical retrieval uses title, seller-note, pickup, meetup, includes,
-   defects, and category evidence, with general study/workspace, cooling, and
-   food-storage profiles. Negated phrases do not count as positive evidence.
-5. The application decides whether deterministic results are sufficient. It
-   never asks the model to classify whether it should be called.
-6. Only fuzzy ordering among multiple plausible candidates reaches the model,
-   once, with at most six candidates and a maximum of four returned results.
-7. Model IDs and reasons are validated, hard constraints are reapplied, and
-   product details are loaded from the local catalogue.
-8. Provider or validation failure returns `keyword-fallback`; impossible or
-   unsupported requests return `no-match` rather than unrelated filler.
-
-### Milestone 4 live evidence before retrieval correction
-
-One authorized local `POST /api/search` request used:
-
-`something compact for studying in a small hostel room`
-
-It returned HTTP 200 with `mode: "ai-reranked"`, internal decision
-`"ai-rerank"`, exactly one provider request, approximately 1.55 seconds of
-route latency, candidate IDs `desk-small-05`, `fan-hostel-01`, and
-`fridge-mini-03`, and final IDs `desk-small-05` and `fan-hostel-01`. IDs,
-reasons, and hard constraints validated, and no sensitive provider data was
-exposed. This verified the complete live pipeline, but also exposed a lexical
-purpose-matching weakness: study intent admitted a fan and fridge while
-omitting `laptop-stand-15`; the model explicitly described the fan as not
-study-related.
-
-### Post-correction non-live evidence
-
-The retrieval correction strengthened general study/workspace, laptop-raising,
-cooling, and food-storage evidence, added multi-intent union behavior, and
-rejects clearly self-negating model reasons. No second live request was made.
-The post-correction behavior is established by deterministic and mocked tests,
-not by a new provider observation. Dimensions, weight, and compactness remain
-unknown unless a listing states them.
-
-## Providers
-
-Model calls are server-only and centralized:
-
-| Module              | Provider            | Endpoint                          | Model                          |
-| ------------------- | ------------------- | --------------------------------- | ------------------------------ |
-| `lib/gateway.ts`    | Cognitio default    | `/v1/chat/completions`            | `gpt-5.6-luna`                 |
-| `lib/openrouter.ts` | Cognitio OpenRouter | `/openrouter/v1/chat/completions` | `deepseek/deepseek-v4.1-flash` |
-
-`lib/qa-provider.ts` selects the active provider, so switching back to the
-verified GPT adapter is a one-line change. The public client cannot choose a
-provider, model, endpoint, headers, token bound, reasoning settings, messages,
-tools, or timeout.
-
-The OpenRouter request fixes `max_tokens: 450` and disables reasoning with
-`reasoning: { effort: "none", exclude: true }`, and the route declares
-`maxDuration = 30` with a 25-second provider timeout.
-
-### Observed live verification
-
-One controlled request through `POST /api/ask` returned `mode: "ai"` with
-`finish_reason: "stop"`, `345` input tokens, `238` completion tokens, `0`
-reasoning tokens, and `583` total tokens in `3163 ms`. This is one measurement,
-not a guarantee.
-
-A separate production request for the same comparison retrieved the same two
-listings but exceeded the 25-second provider timeout, so it returned
-`mode: "fallback"` with zero retries and the same two validated citations. The
-application is correct and safe in both outcomes; AI comparison is not
-guaranteed to complete.
-
-## Interface and themes
-
-The interface is built on one semantic token system in `app/globals.css`. Colour
-roles (surfaces, text, borders, actions, states, overlays, shadows) plus radii,
-spacing, type scale, and motion tokens are declared once, with light and dark
-values resolved by `light-dark()` and the `color-scheme` property. Components no
-longer hardcode raw colours.
-
-- **Themes:** Light, Dark, and System, chosen from a labelled control in the
-  header. The selection is stored in `localStorage` and applied through
-  `data-theme` on `<html>`.
-- **No incorrect-theme flash:** a small inline script applies an explicit Light
-  or Dark choice before first paint.
-- **Works without JavaScript:** System mode needs no attribute at all, so the
-  stylesheet resolves the theme from the operating-system preference. Storage
-  being unavailable degrades to System for the session.
-- **Accessibility:** designed and tested against WCAG 2.2 AA-oriented
-  practices — visible 3px focus rings, semantic landmarks, a coherent heading
-  order, non-colour cues for selected filters, ~44px touch targets, and
-  `prefers-reduced-motion` support. Both themes were validated independently for
-  text contrast.
-- **Responsive:** one column on narrow phones, two on larger phones and small
-  tablets, three on medium desktop, four only when cards stay comfortable.
-
-No backend behaviour changed with the visual work: the API routes, provider
-adapters, retrieval, intent routing, constraints, catalogue data, and
-dependencies are all untouched.
+- Retrieval is lexical and tuned for this 15-record catalogue. A larger catalogue
+  would need database-backed retrieval.
+- Provider availability is not guaranteed. A comparison can time out and return
+  the deterministic fallback for the same question that previously succeeded.
+- There is no persistent distributed rate limiting, so a public deployment could
+  be called repeatedly.
+- The assistant covers the seeded catalogue only. Off-catalogue questions are
+  declined rather than answered.
+- Automated browser checks run at 375 CSS pixels. A physical-phone check is still
+  a manual step.
 
 ## Reviewer walkthrough
 
-1. Open <https://somapah-swap.vercel.app> on a phone.
-2. Confirm one helper input is visible; the old separate search and question
-   boxes are gone.
-3. Press **Dorm** and confirm six seeded listings.
-4. Submit `fan under $30` — authoritative search cards appear, routed to
-   `/api/search` only.
-5. Submit `something to raise my laptop` — the laptop stand appears
-   deterministically with no provider call.
-6. Submit `gaming PC under $100` — a no-match state appears with no unrelated
-   products.
-7. Submit `Does the iPad include an Apple Pencil?` — a deterministic grounded
-   answer.
-8. Submit `What is the iPad health?` → use `What is the iPad battery health?` —
-   the assistant states the listing does not say.
-9. Optionally submit one grounded comparison: `Compare the folding desk and
-laptop stand for a small hostel room.` This is the only step that may spend
-   provider allowance, and it may fall back safely if the provider is slow.
-10. Follow a cited listing link to its local `/item/[id]` page.
-11. Trigger **Reserve (simulated)** and confirm the honest no-seller message.
-12. Open `/notes` and review architecture, evaluation, resilience, and
-    limitations.
+1. Open the production URL on a phone.
+2. Confirm there is one catalogue input and a category filter.
+3. Select **Dorm** and confirm six seeded listings.
+4. Enter `fan under $30` and confirm an authoritative listing card.
+5. Enter `something to raise my laptop` and confirm the laptop stand appears
+   without a model call.
+6. Enter `gaming PC under $100` and confirm an honest no-match state.
+7. Enter `Does the iPad include an Apple Pencil?` and confirm a deterministic answer.
+8. Enter `What is the iPad battery health?` and confirm the assistant says the
+   listing does not say.
+9. Optionally enter one comparison such as `Compare the folding desk and laptop
+stand for a small hostel room.` This is the only step that may use provider
+   allowance, and it may fall back safely.
+10. Follow a cited listing into its detail page and simulate a reservation.
+11. Open `/notes` for the implementation narrative, evaluation, and limitations.
 
-Keep model-backed requests to at most one per review.
+## Notes on AI usage
 
-## Catalogue assistant API
+The product uses AI where language reasoning adds value: fuzzy ranking and
+grounded comparisons. Everything else is deterministic. The implementation
+narrative, including what did not work and what remains unfinished, is on the
+public `/notes` page.
 
-```bash
-curl -s http://localhost:3000/api/ask \
-  -H 'Content-Type: application/json' \
-  -d '{"question":"What is the iPad battery health?"}'
-```
-
-The response contains `answer`, `cited_ids`, `citations`, `missing`, `scope`,
-and `mode`. `mode` is `deterministic`, `ai`, or `fallback`.
+There is no license file in this repository.

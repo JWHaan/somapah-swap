@@ -9,7 +9,6 @@ import {
   type ProviderUsage,
 } from "@/lib/provider-support";
 
-export const OPENROUTER_BASE_URL = "https://174.138.16.223/openrouter/v1";
 export const OPENROUTER_URL =
   "https://174.138.16.223/openrouter/v1/chat/completions";
 export const OPENROUTER_MODEL = "deepseek/deepseek-v4.1-flash";

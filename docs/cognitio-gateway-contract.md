@@ -117,7 +117,7 @@ No tools are used by this application.
 
 The endpoint is documented as OpenAI-compatible.
 
-The September 21, 2026 local and production Milestone 2 verifications confirmed
+The September 21, 2026 local and production connection verifications confirmed
 the generated-text path:
 
 ```text
@@ -184,7 +184,7 @@ The gateway supports SSE streaming. When the client requests a non-streamed
 response, the gateway still streams upstream internally and returns one
 plain JSON response after the final usage data arrives.
 
-Milestone 2 uses:
+The application sends:
 
 ```json
 {
@@ -243,7 +243,7 @@ Not documented.
 
 The application will enforce its own bounded timeout.
 
-Milestone 2 uses a 12-second application timeout with no retry.
+The default-route adapter uses a 12-second application timeout with no retry.
 
 ## Error Behaviour
 
@@ -423,13 +423,13 @@ path was recorded.
 
 The temporary application diagnostic route was removed after successful local
 and production verification. It was not reused as a search or Q&A endpoint, and
-Milestone 2 exposes no public model route.
+No public model route is exposed by the application.
 
 ## Explicit OpenRouter Interface
 
 ### Why It Exists
 
-During Milestone 3 the default Chat Completions route stopped returning usable
+During catalogue Q&A development the default Chat Completions route stopped returning usable
 generated text. A controlled live request received:
 
 - HTTP status: `200`
@@ -601,7 +601,7 @@ returned to the browser.
 
 ### Live Verification
 
-Recorded separately in `app/notes/page.tsx` after the Milestone 3 controlled
+Recorded separately in `app/notes/page.tsx` after the controlled
 request. Only sanitized fields are retained: provider, model, status, candidate
 IDs, cited IDs, latency, normalized token usage, and grounding assessment.
 

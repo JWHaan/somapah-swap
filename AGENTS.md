@@ -71,7 +71,7 @@ embeddings, or an agent framework unless explicitly requested.
 
 ## Working method
 
-For each milestone:
+Working method:
 
 1. Inspect relevant files.
 2. State the implementation plan.
@@ -80,7 +80,7 @@ For each milestone:
 5. Inspect failures.
 6. Fix root causes.
 7. Report changed files and evidence.
-8. Continue only when the milestone exit condition is met.
+8. Continue only when the change is verified.
 
 Do not claim success without command output or browser evidence.
 
@@ -100,7 +100,7 @@ Before declaring completion, run:
 
 Do not weaken or delete tests merely to receive a passing result.
 
-## Completion report
+## Change report
 
 Return:
 

@@ -19,10 +19,11 @@ import qaCases from "./fixtures/qa-cases.json";
 import searchCases from "./fixtures/search-cases.json";
 
 /**
- * Milestone 5 evaluation metrics.
+ * Release evaluation metrics.
  *
- * Everything here is deterministic or mocked; no provider is contacted.
- * Rates are computed from real runs of the shipped functions, never hardcoded.
+ * Everything here is deterministic or mocked; no provider is contacted. Rates
+ * are computed from real runs of the shipped functions, never hardcoded, so the
+ * numbers reported in the documentation cannot drift from the fixtures.
  */
 const catalogue = getListings();
 

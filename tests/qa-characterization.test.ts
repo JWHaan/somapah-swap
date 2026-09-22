@@ -15,13 +15,14 @@ import {
 } from "../lib/openrouter";
 
 /**
- * Milestone 3 characterization guard.
+ * Q&A behaviour freeze.
  *
- * These tests pin the established Q&A behaviour and provider policy so that
- * Milestone 4 shared-retrieval extraction and search additions cannot silently
- * change it. They must keep passing unchanged throughout Milestone 4.
+ * These tests pin the established Q&A decisions and provider policy so that
+ * later retrieval or search work cannot silently change them. They intentionally
+ * assert behaviour rather than implementation, and they do not change when
+ * internals are refactored.
  */
-describe("Milestone 3 Q&A decision characterization", () => {
+describe("Q&A decision characterization", () => {
   it("answers a missing-fact question deterministically with zero provider calls", async () => {
     const provider = vi.fn();
     const result = await answerCatalogueQuestion(
@@ -111,7 +112,7 @@ describe("Milestone 3 Q&A decision characterization", () => {
   });
 });
 
-describe("Milestone 3 provider policy characterization", () => {
+describe("provider policy characterization", () => {
   it("keeps the fixed Q&A OpenRouter policy constants", () => {
     expect(OPENROUTER_URL).toBe(
       "https://174.138.16.223/openrouter/v1/chat/completions",
