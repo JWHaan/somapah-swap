@@ -137,18 +137,33 @@ function isAskResponse(value: unknown): value is AskResult {
   );
 }
 
+/**
+ * Buyer-facing copy for search modes. Internal mode names stay out of the UI.
+ */
 function searchModeLabel(mode: SearchPublicMode): string {
   switch (mode) {
     case "ai-reranked":
-      return "AI-ranked results";
+      return "Ranked by relevance";
     case "keyword-fallback":
-      return "AI ranking was unavailable, so these results use catalogue matching.";
+      return "Showing catalogue matches";
     case "deterministic":
-      return "Catalogue matches";
+      return "Matched from catalogue details";
     case "no-match":
-      return "No matches";
+      return "No matching listings";
   }
 }
+
+function fallbackExplanation(mode: SearchPublicMode): string | null {
+  return mode === "keyword-fallback"
+    ? "Ranking was unavailable, so these are direct catalogue matches."
+    : null;
+}
+
+const HELPER_EXAMPLES = [
+  "Fan under $30",
+  "What comes with the calculator?",
+  "Something to raise my laptop",
+] as const;
 
 function interpretedSummary(interpreted: SearchInterpreted): string | null {
   const parts: string[] = [];
@@ -185,6 +200,7 @@ function interpretedSummary(interpreted: SearchInterpreted): string | null {
 export function CatalogueHelper({ listings }: CatalogueHelperProps) {
   const inputId = useId();
   const helpId = useId();
+  const examplesId = useId();
   const [input, setInput] = useState("");
   const [category, setCategory] = useState<CategoryFilter>("all");
   const [status, setStatus] = useState<HelperStatus>("idle");
@@ -310,9 +326,8 @@ export function CatalogueHelper({ listings }: CatalogueHelperProps) {
     setStatus("answer");
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const trimmed = input.trim();
+  function runRequest(rawInput: string) {
+    const trimmed = rawInput.trim();
 
     if (trimmed.length < MIN_HELPER_INPUT_LENGTH) {
       setStatus("error");
@@ -344,6 +359,16 @@ export function CatalogueHelper({ listings }: CatalogueHelperProps) {
 
     setStatus("pending-ask");
     void submitAsk(trimmed, requestId);
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    runRequest(input);
+  }
+
+  function runExample(example: string) {
+    setInput(example);
+    runRequest(example);
   }
 
   function clearHelper() {
@@ -397,6 +422,22 @@ export function CatalogueHelper({ listings }: CatalogueHelperProps) {
             Find listings with a budget, category, or purpose, or ask about
             price, condition, included items, defects, or meetup details.
           </p>
+          <div className="search-examples">
+            <span className="search-examples__label" id={examplesId}>
+              Try an example
+            </span>
+            {HELPER_EXAMPLES.map((example) => (
+              <button
+                aria-describedby={examplesId}
+                className="search-example"
+                key={example}
+                onClick={() => runExample(example)}
+                type="button"
+              >
+                {example}
+              </button>
+            ))}
+          </div>
           <div className="search-actions">
             <button className="search-submit" disabled={pending} type="submit">
               {pending
@@ -426,21 +467,26 @@ export function CatalogueHelper({ listings }: CatalogueHelperProps) {
             </p>
           ) : null}
           {status === "search-results" && searchResult ? (
-            <p>
-              <span className="search-mode">
-                {searchModeLabel(searchResult.mode)}
-              </span>
-              {" — "}
-              {visibleSearchListings.length} listing
-              {visibleSearchListings.length === 1 ? "" : "s"} shown
-              {summary ? ` (${summary})` : ""}.{" "}
-              <a href="#catalogue-grid">View results</a>
-            </p>
+            <>
+              <p>
+                <span className="search-mode">
+                  {searchModeLabel(searchResult.mode)}
+                </span>
+                {" — "}
+                {visibleSearchListings.length} catalogue match
+                {visibleSearchListings.length === 1 ? "" : "es"}
+                {summary ? ` · ${summary}` : ""}.{" "}
+                <a href="#catalogue-grid">View results</a>
+              </p>
+              {fallbackExplanation(searchResult.mode) ? (
+                <p>{fallbackExplanation(searchResult.mode)}</p>
+              ) : null}
+            </>
           ) : null}
           {status === "no-match" ? (
             <p>
-              No listings match. Try removing a constraint, increasing your
-              budget, or choosing a broader category.
+              {searchModeLabel("no-match")}. Try removing a constraint,
+              increasing your budget, or choosing a broader category.
             </p>
           ) : null}
           {hiddenByCategory ? (

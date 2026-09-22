@@ -336,7 +336,8 @@ test("aria-live status announces pending and result states", async ({
 
   await submit(page, "fan under $30");
   await expect(live).toContainText(/searching the catalogue/i);
-  await expect(live).toContainText(/listing/i);
+  await expect(live).toContainText(/Matched from catalogue details/i);
+  await expect(live).toContainText(/1 catalogue match/i);
 });
 
 test("the unified input keeps a visible keyboard focus indicator", async ({

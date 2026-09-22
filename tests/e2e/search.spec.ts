@@ -93,7 +93,7 @@ test("ai-reranked search shows the AI mode label", async ({ page }) => {
     "something compact for studying in a small hostel room",
   );
 
-  await expect(page.getByText("AI-ranked results")).toBeVisible();
+  await expect(page.getByText("Ranked by relevance")).toBeVisible();
   await expect(page.locator("article[data-listing-id]")).toHaveCount(2);
 });
 
@@ -104,7 +104,8 @@ test("keyword fallback shows the non-alarming fallback label", async ({
   await page.goto("/");
   await submitToHelper(page, "best option for a hostel workspace");
 
-  await expect(page.getByText(/AI ranking was unavailable/i)).toBeVisible();
+  await expect(page.getByText(/Showing catalogue matches/i)).toBeVisible();
+  await expect(page.getByText(/Ranking was unavailable/i)).toBeVisible();
 });
 
 test("no-match shows guidance and no cards", async ({ page }) => {
@@ -112,7 +113,7 @@ test("no-match shows guidance and no cards", async ({ page }) => {
   await page.goto("/");
   await submitToHelper(page, "gaming PC under $100");
 
-  await expect(page.getByText(/No listings match/i)).toBeVisible();
+  await expect(page.getByText(/No matching listings/i)).toBeVisible();
   await expect(page.locator("article[data-listing-id]")).toHaveCount(0);
 });
 

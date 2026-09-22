@@ -53,6 +53,14 @@ export default async function ItemPage({ params }: ItemPageProps) {
           <p className="eyebrow">Seeded marketplace listing</p>
           <h1>{listing.title}</h1>
           <p className="item-heading__price">SGD {listing.price_sgd}</p>
+          <p className="item-heading__badges">
+            <span className="tag tag--category">
+              {formatLabel(listing.category)}
+            </span>
+            <span className="tag tag--condition">
+              {formatLabel(listing.condition)}
+            </span>
+          </p>
         </div>
       </header>
 
@@ -92,7 +100,10 @@ export default async function ItemPage({ params }: ItemPageProps) {
           )}
         </section>
 
-        <section className="panel" aria-labelledby="defects-heading">
+        <section
+          className="panel defect-panel"
+          aria-labelledby="defects-heading"
+        >
           <h2 id="defects-heading">Defects listed by the seller</h2>
           {listing.defects.length > 0 ? (
             <ul className="detail-list">

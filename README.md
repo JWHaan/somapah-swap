@@ -237,6 +237,34 @@ listings but exceeded the 25-second provider timeout, so it returned
 application is correct and safe in both outcomes; AI comparison is not
 guaranteed to complete.
 
+## Interface and themes
+
+The interface is built on one semantic token system in `app/globals.css`. Colour
+roles (surfaces, text, borders, actions, states, overlays, shadows) plus radii,
+spacing, type scale, and motion tokens are declared once, with light and dark
+values resolved by `light-dark()` and the `color-scheme` property. Components no
+longer hardcode raw colours.
+
+- **Themes:** Light, Dark, and System, chosen from a labelled control in the
+  header. The selection is stored in `localStorage` and applied through
+  `data-theme` on `<html>`.
+- **No incorrect-theme flash:** a small inline script applies an explicit Light
+  or Dark choice before first paint.
+- **Works without JavaScript:** System mode needs no attribute at all, so the
+  stylesheet resolves the theme from the operating-system preference. Storage
+  being unavailable degrades to System for the session.
+- **Accessibility:** designed and tested against WCAG 2.2 AA-oriented
+  practices — visible 3px focus rings, semantic landmarks, a coherent heading
+  order, non-colour cues for selected filters, ~44px touch targets, and
+  `prefers-reduced-motion` support. Both themes were validated independently for
+  text contrast.
+- **Responsive:** one column on narrow phones, two on larger phones and small
+  tablets, three on medium desktop, four only when cards stay comfortable.
+
+No backend behaviour changed with the visual work: the API routes, provider
+adapters, retrieval, intent routing, constraints, catalogue data, and
+dependencies are all untouched.
+
 ## Reviewer walkthrough
 
 1. Open <https://somapah-swap.vercel.app> on a phone.

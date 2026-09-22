@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { themeInitScript } from "@/lib/theme";
 
 import "./globals.css";
 
@@ -16,7 +17,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body>
         <a className="skip-link" href="#main-content">
           Skip to main content

@@ -9,7 +9,7 @@ export default function NotesPage() {
     <main className="page-section page-container" id="main-content">
       <header className="page-heading">
         <p className="eyebrow">Assessment notes</p>
-        <h1>What I built</h1>
+        <h1 id="top">What I built</h1>
         <p>
           Somapah Swap is a seeded second-hand marketplace for SUTD students,
           with a catalogue assistant that answers only from the listing data.
@@ -17,9 +17,62 @@ export default function NotesPage() {
         </p>
       </header>
 
+      <nav aria-label="Notes contents" className="notes-nav">
+        <h2>On this page</h2>
+        <ul>
+          <li>
+            <a href="#who-it-is-for">Who it is for</a>
+          </li>
+          <li>
+            <a href="#core-buyer-journey">Core buyer journey</a>
+          </li>
+          <li>
+            <a href="#seeded-simulated-and-limited">
+              Seeded, simulated, and limited
+            </a>
+          </li>
+          <li>
+            <a href="#architecture">Architecture</a>
+          </li>
+          <li>
+            <a href="#one-input-two-routes">One input, two routes</a>
+          </li>
+          <li>
+            <a href="#qanda-grounding-design">Q&amp;A grounding design</a>
+          </li>
+          <li>
+            <a href="#tools-and-models-used">Tools and models used</a>
+          </li>
+          <li>
+            <a href="#validation-and-failure-handling">
+              Validation and failure handling
+            </a>
+          </li>
+          <li>
+            <a href="#evaluation">Evaluation</a>
+          </li>
+          <li>
+            <a href="#security-and-privacy">Security and privacy</a>
+          </li>
+          <li>
+            <a href="#what-i-chose-not-to-build">What I chose not to build</a>
+          </li>
+          <li>
+            <a href="#release-evaluation-23-september-2026">
+              Release evaluation, 23 September 2026
+            </a>
+          </li>
+          <li>
+            <a href="#known-issues-and-unfinished-work">
+              Known issues and unfinished work
+            </a>
+          </li>
+        </ul>
+      </nav>
+
       <div className="notes-layout">
         <section className="panel notes-section">
-          <h2>Who it is for</h2>
+          <h2 id="who-it-is-for">Who it is for</h2>
           <p>
             A SUTD student on a phone who wants a used course, dorm, or tech
             item this week and needs to meet on or near campus at Somapah. The
@@ -29,7 +82,7 @@ export default function NotesPage() {
         </section>
 
         <section className="panel notes-section">
-          <h2>Core buyer journey</h2>
+          <h2 id="core-buyer-journey">Core buyer journey</h2>
           <p>
             Browse the 15 seeded listings, filter by category, open an item to
             read its stated condition, defects, and meetup details, ask the
@@ -39,7 +92,9 @@ export default function NotesPage() {
         </section>
 
         <section className="panel notes-section">
-          <h2>Seeded, simulated, and limited</h2>
+          <h2 id="seeded-simulated-and-limited">
+            Seeded, simulated, and limited
+          </h2>
           <ul>
             <li>All 15 listings are seeded demonstration records.</li>
             <li>No real sellers or user accounts exist.</li>
@@ -54,7 +109,7 @@ export default function NotesPage() {
         </section>
 
         <section className="panel notes-section">
-          <h2>Architecture</h2>
+          <h2 id="architecture">Architecture</h2>
           <p>
             Next.js App Router with TypeScript and a validated JSON catalogue.
             One homepage input answers both “find me listings” and “tell me
@@ -77,7 +132,7 @@ export default function NotesPage() {
         </section>
 
         <section className="panel notes-section">
-          <h2>One input, two routes</h2>
+          <h2 id="one-input-two-routes">One input, two routes</h2>
           <p>
             Buyers previously saw a search box and a separate question box,
             which forced them to know which one to use. There is now a single
@@ -120,7 +175,7 @@ export default function NotesPage() {
         </section>
 
         <section className="panel notes-section">
-          <h2>Q&amp;A grounding design</h2>
+          <h2 id="qanda-grounding-design">Q&amp;A grounding design</h2>
           <p>
             Most questions never reach a model. Exact facts, explicit
             exclusions, missing facts, and off-catalogue requests are decided in
@@ -139,7 +194,7 @@ export default function NotesPage() {
         </section>
 
         <section className="panel notes-section">
-          <h2>Tools and models used</h2>
+          <h2 id="tools-and-models-used">Tools and models used</h2>
           <p>
             I built this with Codex as the AI coding tool, working to the
             assessment brief and the Cognitio gateway documentation. Model calls
@@ -177,7 +232,9 @@ export default function NotesPage() {
         </section>
 
         <section className="panel notes-section">
-          <h2>Validation and failure handling</h2>
+          <h2 id="validation-and-failure-handling">
+            Validation and failure handling
+          </h2>
           <ul>
             <li>
               Questions are 3–500 characters and unknown fields are rejected.
@@ -223,7 +280,7 @@ export default function NotesPage() {
         </section>
 
         <section className="panel notes-section">
-          <h2>Evaluation</h2>
+          <h2 id="evaluation">Evaluation</h2>
           <ul>
             <li>
               Q&amp;A regressions remain green, including the iPad Apple Pencil
@@ -262,7 +319,7 @@ export default function NotesPage() {
         </section>
 
         <section className="panel notes-section">
-          <h2>Security and privacy</h2>
+          <h2 id="security-and-privacy">Security and privacy</h2>
           <ul>
             <li>
               The gateway credential is server-side and never in model context.
@@ -275,7 +332,7 @@ export default function NotesPage() {
         </section>
 
         <section className="panel notes-section">
-          <h2>What I chose not to build</h2>
+          <h2 id="what-i-chose-not-to-build">What I chose not to build</h2>
           <p>
             No authentication, payments, seller messaging, or real reservations,
             because the assessment does not require them and they would add risk
@@ -286,7 +343,9 @@ export default function NotesPage() {
         </section>
 
         <section className="panel notes-section">
-          <h2>Release evaluation, 23 September 2026</h2>
+          <h2 id="release-evaluation-23-september-2026">
+            Release evaluation, 23 September 2026
+          </h2>
           <p>
             I consolidated the deterministic and mocked suites into one command,
             <code>npm run eval</code>, which never contacts a provider. Across{" "}
@@ -295,6 +354,34 @@ export default function NotesPage() {
             <strong>27 search fixtures</strong>, every scored case passes:
             routing 100%, Q&amp;A 100%, and search 100%.
           </p>
+          <ul className="metric-grid">
+            <li className="metric-card">
+              <span className="metric-card__label">Intent fixtures</span>
+              <span className="metric-card__value">20 / 100%</span>
+            </li>
+            <li className="metric-card">
+              <span className="metric-card__label">Q&amp;A fixtures</span>
+              <span className="metric-card__value">30 / 100%</span>
+            </li>
+            <li className="metric-card">
+              <span className="metric-card__label">Search fixtures</span>
+              <span className="metric-card__value">27 / 100%</span>
+            </li>
+            <li className="metric-card">
+              <span className="metric-card__label">Zero provider calls</span>
+              <span className="metric-card__value">100%</span>
+            </li>
+            <li className="metric-card">
+              <span className="metric-card__label">Deterministic requests</span>
+              <span className="metric-card__value">81.5%</span>
+            </li>
+            <li className="metric-card">
+              <span className="metric-card__label">
+                Max AI results accepted
+              </span>
+              <span className="metric-card__value">4</span>
+            </li>
+          </ul>
           <ul>
             <li>
               81.5% of search fixtures are resolved deterministically with zero
@@ -366,7 +453,56 @@ export default function NotesPage() {
         </section>
 
         <section className="panel notes-section">
-          <h2>Known issues and unfinished work</h2>
+          <section className="panel notes-section">
+            <h2 id="interface-and-themes">
+              Interface, themes, and accessibility
+            </h2>
+            <p>
+              I rebuilt the visual layer on one semantic token system instead of
+              scattered colours. Surfaces, text roles, borders, actions, states,
+              shadows, radii, spacing, type scale, and motion durations are all
+              named tokens, with light and dark values resolved through{" "}
+              <code>light-dark()</code> and <code>color-scheme</code>.
+            </p>
+            <p>
+              The header has a labelled Light, Dark, and System control. The
+              choice persists in <code>localStorage</code> and is applied with a{" "}
+              <code>data-theme</code> attribute, and a tiny inline script
+              applies an explicit choice before the first paint so there is no
+              wrong-theme flash. System mode sets no attribute at all, which
+              means the page still picks the right theme with JavaScript delayed
+              or storage unavailable.
+            </p>
+            <p>
+              I worked against WCAG 2.2 AA-oriented practices rather than
+              claiming certification. Both themes were measured independently
+              for text contrast, and two light-theme failures found that way —
+              the condition badge at 4.32:1 and the footer copy at 4.39:1 — were
+              corrected to 5.68:1 and 6.96:1. Focus rings are 3px, touch targets
+              are about 44px, selected filters carry a dot marker as well as
+              colour, and reduced-motion users get nonessential transitions
+              removed.
+            </p>
+            <p>
+              Layout was checked at 320, 375, 390, 768, 1024, and 1440 pixels
+              with no horizontal overflow, and text resized to 200% still keeps
+              the helper usable. Listing cards now lead with a category marker,
+              title, price, and condition, surface a listed defect instead of
+              hiding it, and never imply that an empty defects list means
+              defect-free.
+            </p>
+            <p>
+              None of this touched behaviour. The routes, provider adapters,
+              retrieval, intent routing, constraints, catalogue facts, and
+              package dependencies are unchanged; the helper only gained
+              buyer-facing copy for its result modes and three example chips
+              that run through the same router and validation as typed input.
+            </p>
+          </section>
+
+          <h2 id="known-issues-and-unfinished-work">
+            Known issues and unfinished work
+          </h2>
           <p>
             <span className="status-badge">Verified with caveats</span>
           </p>
