@@ -116,6 +116,27 @@ invalidates the whole model answer rather than showing part of it.
 Bounded retrieval is lexical: exact item context, title phrases, head nouns, and
 explicit price or category constraints, with a relevance floor.
 
+## One homepage control
+
+The home page exposes a single control, "Find or ask about listings", instead of
+separate search and question boxes. `lib/assistant-intent.ts` classifies the
+wording locally with no model call:
+
+- comparisons, question structures, and fact requests go to `POST /api/ask`;
+- discovery wording, budgets, categories, and conditions go to `POST /api/search`;
+- anything ambiguous defaults to search.
+
+One submission reaches exactly one endpoint, the client never calls both, and it
+never falls through from one to the other. Search results keep the category
+chips and render authoritative cards; a grounded answer replaces the grid and
+hides the chips. Clearing the control returns to the default catalogue.
+
+Intent routing is deterministic local code with no model call. The helper is not
+a chatbot: there is no conversation history, no stored questions, no message
+bubbles, no regeneration control, and no multi-turn memory. Both routes keep
+their own validation and provider policy, and this consolidation changed no
+provider, model, endpoint, timeout, or token setting.
+
 ## Natural-language search architecture
 
 `POST /api/search` is deterministic-first:

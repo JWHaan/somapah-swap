@@ -50,9 +50,9 @@ async function fulfil(page: Page, body: unknown) {
   });
 }
 
-async function search(page: Page, query: string) {
-  await page.getByLabel("Search the Somapah Swap catalogue").fill(query);
-  await page.getByRole("button", { name: "Search", exact: true }).click();
+async function submitToHelper(page: Page, text: string) {
+  await page.getByLabel("Your search or question").fill(text);
+  await page.getByRole("button", { name: "Search or ask" }).click();
 }
 
 test("default catalogue renders all listings before searching", async ({
@@ -67,7 +67,7 @@ test("deterministic search renders authoritative cards with reasons", async ({
 }) => {
   await fulfil(page, deterministic);
   await page.goto("/");
-  await search(page, "tech item under $20");
+  await submitToHelper(page, "tech item under $20");
 
   await expect(page.locator("article[data-listing-id]")).toHaveCount(2);
   await expect(
@@ -88,7 +88,10 @@ test("deterministic search renders authoritative cards with reasons", async ({
 test("ai-reranked search shows the AI mode label", async ({ page }) => {
   await fulfil(page, aiReranked);
   await page.goto("/");
-  await search(page, "something compact for studying in a small hostel room");
+  await submitToHelper(
+    page,
+    "something compact for studying in a small hostel room",
+  );
 
   await expect(page.getByText("AI-ranked results")).toBeVisible();
   await expect(page.locator("article[data-listing-id]")).toHaveCount(2);
@@ -99,7 +102,7 @@ test("keyword fallback shows the non-alarming fallback label", async ({
 }) => {
   await fulfil(page, keywordFallback);
   await page.goto("/");
-  await search(page, "best option for a hostel workspace");
+  await submitToHelper(page, "best option for a hostel workspace");
 
   await expect(page.getByText(/AI ranking was unavailable/i)).toBeVisible();
 });
@@ -107,20 +110,24 @@ test("keyword fallback shows the non-alarming fallback label", async ({
 test("no-match shows guidance and no cards", async ({ page }) => {
   await fulfil(page, noMatch);
   await page.goto("/");
-  await search(page, "gaming PC under $100");
+  await submitToHelper(page, "gaming PC under $100");
 
   await expect(page.getByText(/No listings match/i)).toBeVisible();
   await expect(page.locator("article[data-listing-id]")).toHaveCount(0);
 });
 
-test("clear search restores the full catalogue", async ({ page }) => {
+test("clear restores the full catalogue", async ({ page }) => {
   await fulfil(page, aiReranked);
   await page.goto("/");
-  await search(page, "something compact for studying in a small hostel room");
+  await submitToHelper(
+    page,
+    "something compact for studying in a small hostel room",
+  );
   await expect(page.locator("article[data-listing-id]")).toHaveCount(2);
 
-  await page.getByRole("button", { name: "Clear search" }).click();
+  await page.getByRole("button", { name: "Clear", exact: true }).click();
   await expect(page.locator("article[data-listing-id]")).toHaveCount(15);
+  await expect(page.getByLabel("Your search or question")).toHaveValue("");
 });
 
 test("category chip filters active search results without a new request", async ({
@@ -136,7 +143,10 @@ test("category chip filters active search results without a new request", async 
     });
   });
   await page.goto("/");
-  await search(page, "something compact for studying in a small hostel room");
+  await submitToHelper(
+    page,
+    "something compact for studying in a small hostel room",
+  );
   await expect(page.locator("article[data-listing-id]")).toHaveCount(2);
 
   await page.getByRole("button", { name: "Course" }).click();
@@ -169,13 +179,11 @@ test("a stale response cannot overwrite a newer search", async ({ page }) => {
 
   await page.goto("/");
   await page
-    .getByLabel("Search the Somapah Swap catalogue")
+    .getByLabel("Your search or question")
     .fill("something compact for studying in a small hostel room");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
-  await page
-    .getByLabel("Search the Somapah Swap catalogue")
-    .fill("tech item under $20");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await page.getByRole("button", { name: "Search or ask" }).click();
+  await page.getByLabel("Your search or question").fill("tech item under $20");
+  await page.getByRole("button", { name: "Search or ask" }).click();
 
   // The newer deterministic response (2 tech items) must win.
   await expect(
@@ -184,14 +192,12 @@ test("a stale response cannot overwrite a newer search", async ({ page }) => {
   await expect(page.locator("article[data-listing-id]")).toHaveCount(2);
 });
 
-test("search is keyboard operable and a result card links to its item", async ({
+test("the helper is keyboard operable and a result card links to its item", async ({
   page,
 }) => {
   await fulfil(page, deterministic);
   await page.goto("/");
-  await page
-    .getByLabel("Search the Somapah Swap catalogue")
-    .fill("tech under $20");
+  await page.getByLabel("Your search or question").fill("tech under $20");
   await page.keyboard.press("Enter");
   await expect(page.locator("article[data-listing-id]")).toHaveCount(2);
 
@@ -199,4 +205,22 @@ test("search is keyboard operable and a result card links to its item", async ({
   await expect(
     page.getByRole("heading", { level: 1, name: /USB-C hub/ }),
   ).toBeVisible();
+});
+
+test("search results resolve through the authoritative catalogue only", async ({
+  page,
+}) => {
+  await fulfil(page, {
+    mode: "ai-reranked",
+    interpreted: { concepts: ["invented"] },
+    results: [
+      { id: "desk-small-05", reason: "A real listing." },
+      { id: "invented-item-99", reason: "Not a real listing." },
+    ],
+  });
+  await page.goto("/");
+  await submitToHelper(page, "something for a desk");
+
+  await expect(page.getByText(/temporarily unavailable/i)).toBeVisible();
+  await expect(page.locator("article[data-listing-id]")).toHaveCount(15);
 });

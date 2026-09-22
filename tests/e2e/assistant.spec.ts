@@ -1,31 +1,60 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
-function assistant(page: import("@playwright/test").Page) {
-  return page.locator("#catalogue-assistant");
+const comparisonAsk = {
+  answer:
+    "For a hostel room, the desk gives you a work surface while the stand raises a laptop.",
+  cited_ids: ["desk-small-05", "laptop-stand-15"],
+  citations: [
+    {
+      id: "desk-small-05",
+      title: "Small folding desk",
+      href: "/item/desk-small-05",
+    },
+    {
+      id: "laptop-stand-15",
+      title: "Aluminium laptop stand",
+      href: "/item/laptop-stand-15",
+    },
+  ],
+  missing: [],
+  scope: "catalogue",
+  mode: "ai",
+};
+
+function helper(page: Page) {
+  return page.locator("#catalogue-helper");
 }
 
-test("buyer asks a deterministic catalogue question on a phone", async ({
-  page,
-}) => {
+async function fulfilAsk(page: Page, body: unknown) {
+  await page.route("**/api/ask", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(body),
+    });
+  });
+}
+
+async function ask(page: Page, question: string) {
+  await page.getByLabel("Your search or question").fill(question);
+  await page.getByRole("button", { name: "Search or ask" }).click();
+}
+
+test("buyer asks a catalogue question on a phone", async ({ page }) => {
   await page.goto("/");
 
   await expect(
-    page.getByRole("heading", { level: 2, name: "Ask about the catalogue" }),
+    page.getByRole("heading", { level: 2, name: "Find or ask about listings" }),
   ).toBeVisible();
 
-  await page
-    .getByLabel("Your question")
-    .fill("What is the iPad battery health?");
-  await page
-    .getByRole("button", { name: "Ask the catalogue assistant" })
-    .click();
+  await ask(page, "What is the iPad battery health?");
 
-  await expect(assistant(page).getByText(/does not say/i)).toBeVisible();
+  await expect(helper(page).getByText(/does not say/i)).toBeVisible();
   await expect(
-    assistant(page).getByText(/Battery health is not provided/i),
+    helper(page).getByText(/Battery health is not provided/i),
   ).toBeVisible();
 
-  const citation = assistant(page).getByRole("link", {
+  const citation = helper(page).getByRole("link", {
     name: /iPad 8th gen, 32GB/,
   });
   await expect(citation).toHaveAttribute("href", "/item/ipad-sketch-10");
@@ -43,13 +72,8 @@ test("buyer follows a citation into the authoritative item page", async ({
   page,
 }) => {
   await page.goto("/");
-  await page
-    .getByLabel("Your question")
-    .fill("What is the iPad battery health?");
-  await page
-    .getByRole("button", { name: "Ask the catalogue assistant" })
-    .click();
-  await assistant(page)
+  await ask(page, "What is the iPad battery health?");
+  await helper(page)
     .getByRole("link", { name: /iPad 8th gen, 32GB/ })
     .click();
 
@@ -59,56 +83,38 @@ test("buyer follows a citation into the authoritative item page", async ({
   await expect(page.getByText("SGD 220")).toBeVisible();
 });
 
+test("a live Q&A answer runs against the local routes without mocking", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await ask(page, "What is the iPad battery health?");
+
+  await expect(helper(page).getByText(/does not say/i)).toBeVisible();
+  await expect(
+    helper(page).getByRole("link", { name: /iPad 8th gen, 32GB/ }),
+  ).toHaveAttribute("href", "/item/ipad-sketch-10");
+});
+
 test("comparison answers render citations without internal metadata", async ({
   page,
 }) => {
-  await page.route("**/api/ask", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        answer:
-          "For a hostel room, the desk gives you a work surface while the stand raises a laptop.",
-        cited_ids: ["desk-small-05", "laptop-stand-15"],
-        citations: [
-          {
-            id: "desk-small-05",
-            title: "Small folding desk",
-            href: "/item/desk-small-05",
-          },
-          {
-            id: "laptop-stand-15",
-            title: "Aluminium laptop stand",
-            href: "/item/laptop-stand-15",
-          },
-        ],
-        missing: [],
-        scope: "catalogue",
-        mode: "ai",
-      }),
-    });
-  });
-
+  await fulfilAsk(page, comparisonAsk);
   await page.goto("/");
-  await page
-    .getByLabel("Your question")
-    .fill("Which desk or stand is better for a hostel room?");
-  await page
-    .getByRole("button", { name: "Ask the catalogue assistant" })
-    .click();
+  await ask(page, "Compare the desk and the laptop stand for a hostel room.");
 
-  await expect(assistant(page).getByText(/work surface/i)).toBeVisible();
+  await expect(helper(page).getByText(/work surface/i)).toBeVisible();
   await expect(
-    assistant(page).getByRole("link", { name: /Small folding desk/ }),
+    helper(page).getByRole("link", { name: /Small folding desk/ }),
   ).toHaveAttribute("href", "/item/desk-small-05");
   await expect(
-    assistant(page).getByRole("link", { name: /Aluminium laptop stand/ }),
+    helper(page).getByRole("link", { name: /Aluminium laptop stand/ }),
   ).toHaveAttribute("href", "/item/laptop-stand-15");
 
-  const assistantRegion = assistant(page);
-  await expect(assistantRegion).not.toContainText("candidateIds");
-  await expect(assistantRegion).not.toContainText("usage");
-  await expect(assistantRegion).not.toContainText("latency");
+  const region = helper(page);
+  await expect(region).not.toContainText("candidateIds");
+  await expect(region).not.toContainText("usage");
+  await expect(region).not.toContainText("latency");
+  await expect(region).not.toContainText("reasoning");
 
   await expect
     .poll(() =>
@@ -119,7 +125,35 @@ test("comparison answers render citations without internal metadata", async ({
     .toBe(true);
 });
 
-test("assistant surfaces a recoverable error without provider details", async ({
+test("an answer replaces the grid and hides category chips", async ({
+  page,
+}) => {
+  await fulfilAsk(page, comparisonAsk);
+  await page.goto("/");
+  await expect(page.locator("article[data-listing-id]")).toHaveCount(15);
+
+  await ask(page, "Compare the desk and the laptop stand.");
+
+  await expect(helper(page).getByText(/work surface/i)).toBeVisible();
+  await expect(page.locator("article[data-listing-id]")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Dorm" })).toHaveCount(0);
+});
+
+test("clearing an answer restores the default category catalogue", async ({
+  page,
+}) => {
+  await fulfilAsk(page, comparisonAsk);
+  await page.goto("/");
+  await ask(page, "Compare the desk and the laptop stand.");
+  await expect(page.locator("article[data-listing-id]")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Clear", exact: true }).click();
+
+  await expect(page.locator("article[data-listing-id]")).toHaveCount(15);
+  await expect(page.getByRole("button", { name: "Dorm" })).toBeVisible();
+});
+
+test("helper surfaces a recoverable error without provider details", async ({
   page,
 }) => {
   await page.route("**/api/ask", async (route) => {
@@ -133,14 +167,27 @@ test("assistant surfaces a recoverable error without provider details", async ({
   });
 
   await page.goto("/");
-  await page
-    .getByLabel("Your question")
-    .fill("What is the iPad battery health?");
-  await page
-    .getByRole("button", { name: "Ask the catalogue assistant" })
-    .click();
+  await ask(page, "What is the iPad battery health?");
 
   await expect(
-    assistant(page).getByText(/temporarily unavailable/i),
+    helper(page).getByText(/temporarily unavailable/i),
+  ).toBeVisible();
+});
+
+test("a q&a fallback explains itself and still links validated listings", async ({
+  page,
+}) => {
+  await fulfilAsk(page, {
+    ...comparisonAsk,
+    answer:
+      "I could not complete the comparison reliably. You can review the relevant listings directly.",
+    mode: "fallback",
+  });
+  await page.goto("/");
+  await ask(page, "Compare the desk and the laptop stand.");
+
+  await expect(helper(page).getByText(/could not complete/i)).toBeVisible();
+  await expect(
+    helper(page).getByRole("link", { name: /Small folding desk/ }),
   ).toBeVisible();
 });

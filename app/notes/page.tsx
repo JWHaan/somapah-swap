@@ -57,15 +57,65 @@ export default function NotesPage() {
           <h2>Architecture</h2>
           <p>
             Next.js App Router with TypeScript and a validated JSON catalogue.
-            The browser calls <code>POST /api/search</code> for listing cards
-            and
-            <code>POST /api/ask</code> for catalogue questions. Search reads a
-            bounded request, parses deterministic constraints, applies hard
-            filters, retrieves lexical candidates, and decides whether fuzzy
-            reranking adds value before considering one model call. Q&amp;A has
-            its separate deterministic-first path. Server-only adapters own the
-            gateway credential, and model output can select IDs and reasons but
-            cannot rewrite authoritative product records.
+            One homepage input answers both “find me listings” and “tell me
+            about a listing”. A local, deterministic intent router reads the
+            wording and sends the request to <code>POST /api/search</code> for
+            listing cards or <code>POST /api/ask</code> for catalogue questions.
+            The router makes no model call, and one submission reaches exactly
+            one endpoint. The two routes keep their own schemas, validation, and
+            provider policy; the unified control is only a client-side front
+            door.
+          </p>
+          <p>
+            Search reads a bounded request, parses deterministic constraints,
+            applies hard filters, retrieves lexical candidates, and decides
+            whether fuzzy reranking adds value before considering one model
+            call. Q&amp;A has its separate deterministic-first path. Server-only
+            adapters own the gateway credential, and model output can select IDs
+            and reasons but cannot rewrite authoritative product records.
+          </p>
+        </section>
+
+        <section className="panel notes-section">
+          <h2>One input, two routes</h2>
+          <p>
+            Buyers previously saw a search box and a separate question box,
+            which forced them to know which one to use. There is now a single
+            control labelled “Find or ask about listings”. Question-shaped
+            wording, comparisons, and fact requests go to the assistant;
+            discovery wording, budgets, categories, and conditions go to search.
+            Anything ambiguous defaults to search, because showing listings is
+            the safer answer.
+          </p>
+          <p>
+            A search keeps the category chips and the authoritative listing
+            grid, so chips still filter results without any new request. A
+            grounded answer replaces the grid and hides the chips, because
+            category filters do not apply to citations. Clearing the control
+            returns to the default category-filtered catalogue.
+          </p>
+          <p>
+            The intent router is plain deterministic code. It makes no model
+            call, and buying behaviour does not change based on which route
+            answers: search still returns authoritative marketplace cards with
+            match reasons, and Q&amp;A still returns grounded answers with
+            validated local citations. Each submission calls exactly one
+            endpoint, and neither route falls through to the other.
+          </p>
+          <p>
+            This is deliberately not a chatbot. There are no message bubbles, no
+            conversation history, no stored questions, no regeneration controls,
+            no multi-turn memory, and no automatic follow-up model calls. The
+            search and Q&amp;A routes keep their own validation and provider
+            policies, and the consolidation changed nothing about the provider,
+            model, endpoint, allowance, timeout, or token settings.
+          </p>
+          <p>
+            <strong>Implementation status, 23 September 2026.</strong> After a
+            usability review I consolidated the two separate homepage controls
+            into this single helper. The original two-input design was the
+            starting point, not a mistake to hide; buyers simply should not need
+            to know whether their words are a search or a question.
           </p>
         </section>
 
