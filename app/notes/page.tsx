@@ -57,12 +57,15 @@ export default function NotesPage() {
           <h2>Architecture</h2>
           <p>
             Next.js App Router with TypeScript and a validated JSON catalogue.
-            The browser calls <code>POST /api/ask</code>; the route reads a
-            bounded request body, validates it strictly, retrieves a small set
-            of relevant listings, decides whether the question is answerable in
-            code, and only then considers the model. A single server-only
-            adapter owns the gateway credential, so it never enters browser
-            code, and the model never receives product objects it can rewrite.
+            The browser calls <code>POST /api/search</code> for listing cards
+            and
+            <code>POST /api/ask</code> for catalogue questions. Search reads a
+            bounded request, parses deterministic constraints, applies hard
+            filters, retrieves lexical candidates, and decides whether fuzzy
+            reranking adds value before considering one model call. Q&amp;A has
+            its separate deterministic-first path. Server-only adapters own the
+            gateway credential, and model output can select IDs and reasons but
+            cannot rewrite authoritative product records.
           </p>
         </section>
 
@@ -90,11 +93,12 @@ export default function NotesPage() {
           <p>
             I built this with Codex as the AI coding tool, working to the
             assessment brief and the Cognitio gateway documentation. Model calls
-            happen only on the server. No model powers search yet, because
-            natural-language search is not implemented in this milestone.
+            happen only on the server. Search uses deterministic constraint
+            parsing and lexical retrieval first, with one optional reranking
+            call only when multiple fuzzy candidates remain.
           </p>
           <p>
-            The assistant currently uses{" "}
+            The assistant and search reranker use{" "}
             <code>deepseek/deepseek-v4.1-flash</code> through the gateway&apos;s
             explicit OpenRouter route, which has a separate budget. The gateway
             automatic fallback is not used.
@@ -130,6 +134,22 @@ export default function NotesPage() {
             </li>
             <li>Raw request bodies over 2 KiB are refused before parsing.</li>
             <li>
+              Search queries are 3–300 characters. Deterministic constraints
+              make zero model calls; fuzzy ordering sends at most six candidates
+              to one search call and returns at most four validated results.
+            </li>
+            <li>
+              Search uses a fixed 300-token, reasoning-disabled request with an
+              8-second provider timeout and a 12-second route maximum. Q&amp;A
+              keeps its separate 450-token, 25-second, and 30-second policy.
+            </li>
+            <li>
+              Search IDs must be catalogue IDs from the retrieved candidate set.
+              Hard constraints are reapplied after model output, and a
+              self-negating or unsupported reason falls back to deterministic
+              catalogue matching.
+            </li>
+            <li>
               The model path makes at most one provider call, with a fixed model
               and endpoint, no tools, no history, and a 25-second provider
               timeout. The <code>/api/ask</code> function is allowed a 30-second
@@ -156,32 +176,38 @@ export default function NotesPage() {
           <h2>Evaluation</h2>
           <ul>
             <li>
-              iPad Apple Pencil question: correctly answered “no”, no model
-              call.
+              Q&amp;A regressions remain green, including the iPad Apple Pencil
+              exclusion, missing battery health, unconfirmed Bluetooth, fridge
+              capacity, bike brand, monitor fairness, same-day availability, and
+              off-catalogue refusals.
             </li>
             <li>
-              Battery health, fridge capacity, bike brand: “the listing does not
-              say”.
-            </li>
-            <li>Keychron Bluetooth: reported as not confirmed, wired noted.</li>
-            <li>
-              Monitor fairness: price quoted, external market data declined.
+              Deterministic search cases make zero provider calls: fan under a
+              budget, monitor/MRT, Arduino/prototyping, laptop raising, tech
+              under S$20, like-new tech, calculator, iPad, and dorm filters.
             </li>
             <li>
-              Same-day fridge pickup: meetup window quoted, live availability
-              declined.
+              Study/workspace retrieval keeps desk-small-05 and laptop-stand-15,
+              excludes the fan and mini fridge for study-only intent, and unions
+              a fan back in for a combined study-and-cooling request.
             </li>
             <li>
-              Latest-news and secret-extraction prompts: declined, no model
-              call.
+              Fuzzy multi-candidate search cases use exactly one mocked provider
+              boundary call and cap results at four. Provider failures and
+              self-negating reasons use keyword fallback.
             </li>
             <li>
-              Desk-versus-stand comparison: one model call, citations validated.
+              Gaming PC, invention prompts, contradictory prices, and unknown
+              required features return no-match rather than unrelated filler.
             </li>
           </ul>
           <p>
-            These cases run automatically in the test suite, including
-            adversarial ones that assert no provider call happens at all.
+            The first controlled live search request was made before the
+            retrieval correction. It returned <code>mode: ai-reranked</code>
+            with one provider call and validated IDs, but its candidate set
+            included a fan and mini fridge while omitting the laptop stand.
+            Post-correction behavior is established by deterministic and mocked
+            regression tests; no second live request was made.
           </p>
         </section>
 
@@ -250,15 +276,35 @@ export default function NotesPage() {
             listings rather than inventing an answer.
           </p>
           <p>
-            Natural-language marketplace search, keyword search fallback, and
-            result reranking are not implemented, so the home page still uses
-            category filters rather than a search box. The assistant appears on
-            the home page only; the item page does not yet pre-fill its item
-            context even though the API already accepts it. Retrieval is lexical
-            and tuned for this small catalogue, so it would need revisiting
-            before a much larger one. Very unusual phrasings can still retrieve
-            a loosely related item, because the relevance rules are heuristics
-            rather than true language understanding.
+            One controlled live search request was made before the retrieval
+            correction for
+            <code>something compact for studying in a small hostel room</code>.
+            It returned HTTP 200, <code>mode: ai-reranked</code>, exactly one
+            provider call, approximately 1.55 seconds of route latency, and
+            validated final IDs <code>desk-small-05</code> and
+            <code>fan-hostel-01</code>. The candidate set also included
+            <code>fridge-mini-03</code> and omitted
+            <code>laptop-stand-15</code>, exposing a lexical purpose-matching
+            weakness. The model explicitly said the fan was not study-related.
+          </p>
+          <p>
+            I corrected that weakness deterministically with general
+            study/workspace, laptop-raising, cooling, food-storage, and
+            multi-intent evidence profiles. Study-only retrieval now requires
+            stronger purpose evidence; generic hostel, dorm, and small-room
+            words do not qualify every dorm appliance. Search also rejects
+            clearly self-negating model reasons and falls back to catalogue
+            matching. The correction was verified by deterministic and mocked
+            regression tests, not by another live provider request.
+          </p>
+          <p>
+            Exact dimensions, weight, and compactness remain unknown unless a
+            listing states them. Natural-language search remains lexical plus
+            optional one-call reranking, so unusual phrasing can still be less
+            precise than a larger semantic retrieval system. The item page does
+            not yet pre-fill Q&amp;A context even though the API accepts
+            <code>item_id</code>, and the public deployment has no distributed
+            rate limiting.
           </p>
         </section>
       </div>

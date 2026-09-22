@@ -131,8 +131,23 @@ function errorCodeForEnvelope(
   return null;
 }
 
+export type OpenRouterCallOptions = {
+  maxTokens: number;
+  timeoutMs: number;
+};
+
 export async function callOpenRouterGateway(
   input: string,
+): Promise<OpenRouterResult> {
+  return callOpenRouterChat(input, {
+    maxTokens: OPENROUTER_MAX_TOKENS,
+    timeoutMs: OPENROUTER_TIMEOUT_MS,
+  });
+}
+
+export async function callOpenRouterChat(
+  input: string,
+  options: OpenRouterCallOptions,
 ): Promise<OpenRouterResult> {
   const startedAt = Date.now();
   const normalizedInput = typeof input === "string" ? input.trim() : "";
@@ -155,7 +170,7 @@ export async function callOpenRouterGateway(
   const timeout = setTimeout(() => {
     timedOut = true;
     controller.abort();
-  }, OPENROUTER_TIMEOUT_MS);
+  }, options.timeoutMs);
 
   try {
     let providerResponse: Response;
@@ -171,7 +186,7 @@ export async function callOpenRouterGateway(
           model: OPENROUTER_MODEL,
           messages: [{ role: "user", content: normalizedInput }],
           stream: false,
-          max_tokens: OPENROUTER_MAX_TOKENS,
+          max_tokens: options.maxTokens,
           reasoning: {
             effort: OPENROUTER_REASONING_EFFORT,
             exclude: OPENROUTER_REASONING_EXCLUDE,

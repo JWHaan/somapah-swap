@@ -32,6 +32,7 @@ audit-results.*
 # Local and assessment-only files
 .DS_Store
 conversation.md
+transcript.md
 CognitioLabs-FDE-assessment-brief.pdf
 
 # Editor metadata

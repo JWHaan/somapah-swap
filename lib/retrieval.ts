@@ -1,4 +1,14 @@
 import type { Category, Listing } from "@/lib/catalogue";
+import {
+  clampCandidateLimit,
+  expandWithSynonyms,
+  fieldTerms,
+  headTitleTerms as headTitleTermsCore,
+  longestMatchingTitlePhrase as longestMatchingTitlePhraseCore,
+  meaningfulTerms,
+  normalizeText,
+  overlapScore,
+} from "@/lib/retrieval-core";
 
 export const MAX_RETRIEVAL_CANDIDATES = 6;
 export const MIN_RELEVANCE_SCORE = 4;
@@ -143,36 +153,12 @@ const contextTerms = new Set([
   "weekend",
 ]);
 
-function normalizeText(value: string): string {
-  return value
-    .normalize("NFKD")
-    .toLowerCase()
-    .replace(/[’']/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
 function expandTerms(terms: readonly string[]): Set<string> {
-  const expanded = new Set(terms);
-
-  for (const group of synonymGroups) {
-    if (group.some((term) => expanded.has(term))) {
-      group.forEach((term) => expanded.add(term));
-    }
-  }
-
-  return expanded;
+  return expandWithSynonyms(terms, synonymGroups);
 }
 
 function directQuestionTerms(question: string): Set<string> {
-  return new Set(
-    normalizeText(question)
-      .split(" ")
-      .filter(
-        (term) =>
-          term.length > 1 && !stopWords.has(term) && !/^\d+$/.test(term),
-      ),
-  );
+  return meaningfulTerms(question, stopWords);
 }
 
 function synonymOnlyTerms(directTerms: ReadonlySet<string>): Set<string> {
@@ -185,40 +171,8 @@ function productTermsOnly(terms: ReadonlySet<string>): Set<string> {
   return new Set([...terms].filter((term) => productNouns.has(term)));
 }
 
-function fieldTerms(value: string | readonly string[]): Set<string> {
-  const text = typeof value === "string" ? value : value.join(" ");
-  return new Set(normalizeText(text).split(" ").filter(Boolean));
-}
-
 function headTitleTerms(title: string): Set<string> {
-  const tokens = normalizeText(title).split(" ").filter(Boolean);
-  const heads = new Set<string>();
-
-  tokens.forEach((token, index) => {
-    const next = tokens[index + 1];
-
-    if (!next || !productNouns.has(next)) {
-      heads.add(token);
-    }
-  });
-
-  return heads;
-}
-
-function overlapScore(
-  query: ReadonlySet<string>,
-  field: ReadonlySet<string>,
-  weight: number,
-): number {
-  let score = 0;
-
-  query.forEach((term) => {
-    if (field.has(term)) {
-      score += weight;
-    }
-  });
-
-  return score;
+  return headTitleTermsCore(title, productNouns);
 }
 
 function parseConstraints(question: string): RetrievalConstraints {
@@ -262,20 +216,7 @@ function longestMatchingTitlePhrase(
   normalizedQuestion: string,
   title: string,
 ): number {
-  const titleTokens = normalizeText(title).split(" ").filter(Boolean);
-  const paddedQuestion = ` ${normalizedQuestion} `;
-
-  for (let length = Math.min(titleTokens.length, 4); length >= 2; length -= 1) {
-    for (let start = 0; start + length <= titleTokens.length; start += 1) {
-      const phrase = titleTokens.slice(start, start + length).join(" ");
-
-      if (paddedQuestion.includes(` ${phrase} `)) {
-        return length;
-      }
-    }
-  }
-
-  return 0;
+  return longestMatchingTitlePhraseCore(normalizedQuestion, title);
 }
 
 function obeysConstraints(
@@ -364,10 +305,7 @@ export function retrieveListingsForQuestion({
   const namedProductSynonyms = productTermsOnly(synonymTerms);
   const targetTerms = comparisonTargetTerms(question);
   const constraints = parseConstraints(question);
-  const boundedLimit = Math.max(
-    1,
-    Math.min(Math.trunc(limit), MAX_RETRIEVAL_CANDIDATES),
-  );
+  const boundedLimit = clampCandidateLimit(limit, MAX_RETRIEVAL_CANDIDATES);
   const seenIds = new Set<string>();
   const scoredListings = catalogue
     .map((listing, index) => {

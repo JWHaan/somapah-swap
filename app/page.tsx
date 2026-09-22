@@ -25,9 +25,10 @@ export default function Home() {
         </div>
       </section>
 
-      <CatalogueAssistant />
-
-      <MarketplaceCatalogue listings={listings} />
+      <MarketplaceCatalogue
+        listings={listings}
+        assistantSlot={<CatalogueAssistant />}
+      />
     </main>
   );
 }

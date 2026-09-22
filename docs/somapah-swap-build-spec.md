@@ -1108,3 +1108,65 @@ The project is done when a reviewer can, without instructions or login:
 8. Inspect a public repository with clear history and no secrets.
 
 Anything beyond this definition is optional and must not endanger deployment quality.
+
+---
+
+## Milestone 4 implementation status addendum — 22 September 2026
+
+Milestone 4 natural-language catalogue search is implemented as a value-gated
+hybrid path. Exact constraints and uniquely supported matches are deterministic;
+fuzzy ordering among multiple plausible candidates may make one server-side
+reranking call. Search returns validated IDs and short reasons, while all
+listing-card product details come from `data/listings.json`.
+
+### Controlled live evidence before retrieval correction
+
+One authorized local `POST /api/search` request used:
+
+`something compact for studying in a small hostel room`
+
+It returned HTTP 200 with `mode: "ai-reranked"`, internal decision
+`"ai-rerank"`, exactly one provider request, approximately 1.55 seconds of
+route latency, candidate IDs `desk-small-05`, `fan-hostel-01`, and
+`fridge-mini-03`, and final IDs `desk-small-05` and `fan-hostel-01`. IDs,
+reasons, and hard constraints passed validation, and no sensitive provider data
+was exposed.
+
+This verified the complete live request path, including selective reranking,
+strict output parsing, candidate-bound IDs, authoritative card lookup, reason
+validation, and safe public response construction. It also exposed a lexical
+purpose-matching weakness: study intent admitted a fan and mini fridge while
+omitting `laptop-stand-15`; the model explicitly described the fan as not
+study-related.
+
+### Post-correction non-live evidence
+
+The retrieval correction uses general evidence profiles rather than a branch
+for the live query. Study/workspace evidence includes desk, laptop, laptop
+stand, lamp, work-surface, eye-level, coding, sketching, and drawing signals.
+Cooling requires fan/cooling evidence, and food-storage requires fridge,
+food, drinks, cold, or storage evidence. Generic hostel, dorm, and small-room
+words do not qualify every dorm appliance. Multiple active intents are unioned,
+so a study-and-cooling query may retain workspace items and a fan while
+excluding a mini fridge without food-storage intent.
+
+Model reasons that explicitly negate the requested purpose are rejected under
+the existing fail-closed policy. Honest qualifications such as dimensions not
+being provided, portability not being established, or compatibility being
+unconfirmed remain allowed. Invalid reasons use deterministic keyword fallback.
+
+Deterministic and mocked regression tests establish the corrected behavior:
+study-only retrieval retains `desk-small-05` and `laptop-stand-15` while
+excluding `fan-hostel-01` and `fridge-mini-03`; laptop raising remains a unique
+zero-call match; cooling selects `fan-hostel-01`; combined study-and-cooling
+retrieval can include the fan without admitting the fridge; and generic small
+hostel-room queries retain multiple plausible dorm candidates. No second live
+provider request was made, so these post-correction candidate results are not
+live observations. Dimensions, weight, and compactness remain unknown unless a
+listing states them.
+
+The search route keeps its fixed 300-token, reasoning-disabled, 8-second
+provider policy and 12-second route maximum. Q&A remains unchanged at 450
+tokens, a 25-second provider timeout, and a 30-second route maximum. Embeddings
+and vector search were not added because the catalogue contains only 15 seeded
+listings.

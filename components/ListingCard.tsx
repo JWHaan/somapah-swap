@@ -4,6 +4,7 @@ import type { Listing } from "@/lib/catalogue";
 
 type ListingCardProps = {
   listing: Listing;
+  reason?: string;
 };
 
 function formatLabel(value: string): string {
@@ -13,7 +14,7 @@ function formatLabel(value: string): string {
     .join(" ");
 }
 
-export function ListingCard({ listing }: ListingCardProps) {
+export function ListingCard({ listing, reason }: ListingCardProps) {
   return (
     <article className="listing-card" data-listing-id={listing.id}>
       <Link className="listing-card__link" href={`/item/${listing.id}`}>
@@ -33,6 +34,14 @@ export function ListingCard({ listing }: ListingCardProps) {
           <p className="listing-card__detail">
             <strong>Meetup:</strong> {listing.meetup_window}
           </p>
+          {reason ? (
+            <p className="listing-card__reason">
+              <span className="listing-card__reason-label">
+                Why it matches:
+              </span>{" "}
+              {reason}
+            </p>
+          ) : null}
         </span>
       </Link>
     </article>

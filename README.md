@@ -4,11 +4,7 @@ Somapah Swap is a mobile-first second-hand marketplace demo for SUTD students.
 It provides a validated 15-item catalogue, category filters, item detail pages,
 a simulated reserve interaction, and an honest public `/notes` page.
 
-Milestone 3 adds a value-gated, catalogue-grounded assistant on the home page.
-Most questions are answered in code and never reach a model; comparisons make at
-most one server-side call to a model provider, and every model citation is
-validated against the retrieved listings before it is shown. Natural-language
-search is still not implemented.
+Milestone 3 adds a value-gated, catalogue-grounded assistant on the home page. Milestone 4 adds value-gated hybrid natural-language catalogue search: exact constraints and uniquely supported matches are deterministic, while fuzzy ordering may make at most one server-side model call. Search results are always authoritative local listing cards, and invalid model output falls back to deterministic catalogue matching.
 
 ## Requirements
 
@@ -63,6 +59,22 @@ npm run build
 - Reserve is simulated and never contacts a seller or takes payment.
 - `POST /api/ask` answers catalogue questions. It rejects unknown fields and
   bodies over 2 KiB, and it never exposes provider metadata to the browser.
+- `POST /api/search` accepts a bounded natural-language query. Deterministic
+  constraints and uniquely supported catalogue matches make zero provider
+  calls; fuzzy multi-candidate ordering makes at most one server-side call.
+  Results contain validated IDs and short reasons, while the browser renders
+  all product details from the local catalogue.
+- The search provider uses the fixed OpenRouter route with
+  `deepseek/deepseek-v4.1-flash`, `max_tokens: 300`, disabled reasoning, an
+  8-second provider timeout, and a 12-second route `maxDuration`. Q&A keeps
+  its separate 450-token, 25-second, and 30-second policy.
+- Search provider failures, malformed output, invalid IDs, unsupported
+  reasons, or hard-constraint violations degrade to a useful deterministic
+  `keyword-fallback`. No-match is preferred to unrelated filler.
+- Search retrieval is lexical with general study/workspace, cooling, and
+  food-storage evidence profiles. Generic hostel, dorm, or small-room words
+  do not by themselves make every dorm listing relevant. Multi-intent queries
+  union the relevant profiles.
 - The assistant appears on the home page only, but `/api/ask` already accepts an
   optional `item_id` so an item page can reuse it later without an API change.
 - Q&A uses the gateway's explicit OpenRouter route with
@@ -77,8 +89,8 @@ npm run build
 - Upstream provider latency varies. An AI comparison can complete, or can
   time out and fall back, for the same question. The fallback is grounded and
   still links the relevant local listings.
-- Natural-language search, search reranking, embeddings, caching, and
-  authentication are not implemented.
+- Natural-language search remains lexical plus optional one-call reranking; embeddings,
+  caching, and authentication are not implemented.
 - There is no distributed rate limiting. A public deployment could be called
   repeatedly, so request limits and per-IP throttling are a known production
   gap.
@@ -103,6 +115,52 @@ invalidates the whole model answer rather than showing part of it.
 
 Bounded retrieval is lexical: exact item context, title phrases, head nouns, and
 explicit price or category constraints, with a relevance floor.
+
+## Natural-language search architecture
+
+`POST /api/search` is deterministic-first:
+
+1. The route reads a bounded strict request body.
+2. Deterministic parsing extracts category, condition, price operators,
+   product concepts, pickup/meetup terms, accessories, and evidence-sensitive
+   requirements.
+3. Hard constraints are applied before retrieval.
+4. Bounded lexical retrieval uses title, seller-note, pickup, meetup, includes,
+   defects, and category evidence, with general study/workspace, cooling, and
+   food-storage profiles. Negated phrases do not count as positive evidence.
+5. The application decides whether deterministic results are sufficient. It
+   never asks the model to classify whether it should be called.
+6. Only fuzzy ordering among multiple plausible candidates reaches the model,
+   once, with at most six candidates and a maximum of four returned results.
+7. Model IDs and reasons are validated, hard constraints are reapplied, and
+   product details are loaded from the local catalogue.
+8. Provider or validation failure returns `keyword-fallback`; impossible or
+   unsupported requests return `no-match` rather than unrelated filler.
+
+### Milestone 4 live evidence before retrieval correction
+
+One authorized local `POST /api/search` request used:
+
+`something compact for studying in a small hostel room`
+
+It returned HTTP 200 with `mode: "ai-reranked"`, internal decision
+`"ai-rerank"`, exactly one provider request, approximately 1.55 seconds of
+route latency, candidate IDs `desk-small-05`, `fan-hostel-01`, and
+`fridge-mini-03`, and final IDs `desk-small-05` and `fan-hostel-01`. IDs,
+reasons, and hard constraints validated, and no sensitive provider data was
+exposed. This verified the complete live pipeline, but also exposed a lexical
+purpose-matching weakness: study intent admitted a fan and fridge while
+omitting `laptop-stand-15`; the model explicitly described the fan as not
+study-related.
+
+### Post-correction non-live evidence
+
+The retrieval correction strengthened general study/workspace, laptop-raising,
+cooling, and food-storage evidence, added multi-intent union behavior, and
+rejects clearly self-negating model reasons. No second live request was made.
+The post-correction behavior is established by deterministic and mocked tests,
+not by a new provider observation. Dimensions, weight, and compactness remain
+unknown unless a listing states them.
 
 ## Providers
 

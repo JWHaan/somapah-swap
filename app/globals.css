@@ -203,6 +203,147 @@ p {
   padding-block: 1rem 4rem;
 }
 
+.search-panel {
+  border-color: #c9dcd2;
+  background: #f7fcf9;
+  margin-bottom: 1.35rem;
+}
+
+.search-panel h2 {
+  margin: 0;
+  font-size: clamp(1.45rem, 5vw, 2rem);
+}
+
+.search-intro {
+  max-width: 46rem;
+  margin: 0.7rem 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.search-form {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1.15rem;
+}
+
+.search-label {
+  font-weight: 800;
+}
+
+.search-input {
+  width: 100%;
+  min-height: 3rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface-strong);
+  padding: 0.75rem;
+  color: var(--foreground);
+  font: inherit;
+}
+
+.search-input:focus-visible {
+  outline: 3px solid var(--warm);
+  outline-offset: 2px;
+}
+
+.search-help {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.search-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.35rem;
+}
+
+.search-submit {
+  min-height: 3rem;
+  flex: 1 1 auto;
+  border: 0;
+  border-radius: 0.8rem;
+  background: var(--accent);
+  padding: 0.75rem 1.25rem;
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 850;
+}
+
+.search-submit:hover:not(:disabled) {
+  background: var(--accent-strong);
+}
+
+.search-submit:disabled {
+  cursor: progress;
+  opacity: 0.75;
+}
+
+.search-clear {
+  min-height: 3rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  background: var(--surface-strong);
+  padding: 0.75rem 1.25rem;
+  color: var(--foreground);
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.search-clear:hover {
+  border-color: var(--accent);
+}
+
+.search-status {
+  margin-top: 1rem;
+  line-height: 1.55;
+}
+
+.search-status p {
+  margin: 0.4rem 0 0;
+}
+
+.search-mode {
+  font-weight: 800;
+  color: var(--accent-strong);
+}
+
+.search-error {
+  border-radius: 0.75rem;
+  background: var(--danger-soft);
+  padding: 0.8rem;
+  color: #71392e;
+  font-weight: 650;
+}
+
+.link-button {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--accent-strong);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+}
+
+.listing-grid--updating {
+  opacity: 0.6;
+}
+
+.listing-card__reason {
+  margin: 0.5rem 0 0;
+  color: var(--accent-strong);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.listing-card__reason-label {
+  font-weight: 800;
+}
+
 .assistant-section {
   padding-block: 0.5rem 1.5rem;
 }
