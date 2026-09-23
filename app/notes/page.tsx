@@ -49,9 +49,6 @@ export default function NotesPage() {
             </a>
           </li>
           <li>
-            <a href="#evaluation">Evaluation</a>
-          </li>
-          <li>
             <a href="#security-and-privacy">Security and privacy</a>
           </li>
           <li>
@@ -69,6 +66,11 @@ export default function NotesPage() {
           </li>
           <li>
             <a href="#what-i-would-build-next">What I would build next</a>
+          </li>
+          <li>
+            <a href="#if-it-became-a-real-marketplace">
+              If it became a real marketplace
+            </a>
           </li>
           <li>
             <a href="#known-issues-and-unfinished-work">
@@ -119,13 +121,13 @@ export default function NotesPage() {
         <section className="panel notes-section">
           <h2 id="architecture">Architecture</h2>
           <p>
-            The repository carries three supporting documents:{" "}
-            <code>docs/architecture.md</code> for the final component boundaries
-            and trust model, <code>docs/evaluation.md</code> for fixture design
-            and the full metric table, and <code>docs/decisions/</code> for the
-            durable design records behind deterministic-first handling,
-            grounding, value-gated search, the unified input, and provider
-            resilience. This page is the narrative; those files are the detail.
+            Supporting detail lives in <code>docs/architecture.md</code>{" "}
+            (component boundaries and trust model),{" "}
+            <code>docs/evaluation.md</code> (fixture design and metrics), and{" "}
+            <code>docs/decisions/</code> (design records for deterministic-first
+            handling, grounding, value-gated search, the unified input, and
+            provider resilience). This page is the narrative; those files are
+            the detail.
           </p>
           <p>
             Next.js App Router with TypeScript and a validated JSON catalogue.
@@ -167,27 +169,23 @@ export default function NotesPage() {
             returns to the full catalogue with All selected.
           </p>
           <p>
-            The intent router is plain deterministic code. It makes no model
-            call, and buying behaviour does not change based on which route
-            answers: search still returns authoritative marketplace cards with
-            match reasons, and Q&amp;A still returns grounded answers with
-            validated local citations. Each submission calls exactly one
+            The router is plain code and makes no model call. Which route
+            answers does not change buying behaviour: search still returns
+            authoritative cards with match reasons, and Q&amp;A grounded answers
+            with validated local citations. Each submission calls exactly one
             endpoint, and neither route falls through to the other.
           </p>
           <p>
-            This is deliberately not a chatbot. There are no message bubbles, no
-            conversation history, no stored questions, no regeneration controls,
-            no multi-turn memory, and no automatic follow-up model calls. The
-            search and Q&amp;A routes keep their own validation and provider
-            policies, and the consolidation changed nothing about the provider,
-            model, endpoint, allowance, timeout, or token settings.
+            This is deliberately not a chatbot: no message bubbles, no
+            conversation history, no stored questions, no regeneration, no
+            multi-turn memory, and no follow-up calls. The consolidation changed
+            nothing about the provider, model, endpoint, allowance, timeout, or
+            token settings.
           </p>
           <p>
-            <strong>Implementation status, 23 September 2026.</strong> After a
-            usability review I consolidated the two separate homepage controls
-            into this single helper. The original two-input design was the
-            starting point, not a mistake to hide; buyers simply should not need
-            to know whether their words are a search or a question.
+            <strong>Implementation status, 23 September 2026.</strong> This
+            consolidation followed a usability review. The two-input design was
+            the starting point, not a mistake to hide.
           </p>
         </section>
 
@@ -226,15 +224,13 @@ export default function NotesPage() {
             automatic fallback is not used.
           </p>
           <p>
-            GPT came first. The initial server-side integration verified{" "}
+            GPT came first: the first server-side integration verified{" "}
             <code>gpt-5.6-luna</code> through the default chat-completions
-            route, locally and from the deployed site. Later, that route began
-            answering with <code>X-Gateway-Fallback: window_share</code> because
-            the subscription share was exhausted, and the automatic fallback
-            upstream returned an HTTP 200 body containing an error object
-            instead of choices. Rather than wait for the share to recover, I
-            moved Q&amp;A to the explicit OpenRouter route. The original GPT
-            adapter is still implemented and tested behind the same
+            route, locally and on the deployed site, until that route answered
+            with <code>X-Gateway-Fallback: window_share</code> and its automatic
+            fallback returned an HTTP 200 error object instead of choices. I
+            moved Q&amp;A to the explicit OpenRouter route; the original GPT
+            adapter remains implemented and tested behind the same
             provider-independent interface, so switching back is a one-line
             change.
           </p>
@@ -297,45 +293,6 @@ export default function NotesPage() {
         </section>
 
         <section className="panel notes-section">
-          <h2 id="evaluation">Evaluation</h2>
-          <ul>
-            <li>
-              Q&amp;A regressions remain green, including the iPad Apple Pencil
-              exclusion, missing battery health, unconfirmed Bluetooth, fridge
-              capacity, bike brand, monitor fairness, same-day availability, and
-              off-catalogue refusals.
-            </li>
-            <li>
-              Deterministic search cases make zero provider calls: fan under a
-              budget, monitor/MRT, Arduino/prototyping, laptop raising, tech
-              under S$20, like-new tech, calculator, iPad, and dorm filters.
-            </li>
-            <li>
-              Study/workspace retrieval keeps desk-small-05 and laptop-stand-15,
-              excludes the fan and mini fridge for study-only intent, and unions
-              a fan back in for a combined study-and-cooling request.
-            </li>
-            <li>
-              Fuzzy multi-candidate search cases use exactly one mocked provider
-              boundary call and cap results at four. Provider failures and
-              self-negating reasons use keyword fallback.
-            </li>
-            <li>
-              Gaming PC, invention prompts, contradictory prices, and unknown
-              required features return no-match rather than unrelated filler.
-            </li>
-          </ul>
-          <p>
-            The first controlled live search request was made before the
-            retrieval correction. It returned <code>mode: ai-reranked</code>
-            with one provider call and validated IDs, but its candidate set
-            included a fan and mini fridge while omitting the laptop stand.
-            Post-correction behavior is established by deterministic and mocked
-            regression tests; no second live request was made.
-          </p>
-        </section>
-
-        <section className="panel notes-section">
           <h2 id="security-and-privacy">Security and privacy</h2>
           <ul>
             <li>
@@ -366,15 +323,10 @@ export default function NotesPage() {
           <p>
             Every figure below is computed from this repository&apos;s named
             evaluation fixtures, so it describes fixture behaviour rather than
-            general marketplace accuracy.
-          </p>
-          <p>
-            I consolidated the deterministic and mocked suites into one command,
-            <code>npm run eval</code>, which never contacts a provider. Across{" "}
-            <strong>20 intent-routing fixtures</strong>,{" "}
-            <strong>30 catalogue Q&amp;A fixtures,</strong> and{" "}
-            <strong>27 search fixtures</strong>, every scored case passes:
-            routing 100%, Q&amp;A 100%, and search 100%.
+            general marketplace accuracy. <code>npm run eval</code> runs the
+            deterministic and mocked suites without contacting a provider: 20
+            intent-routing fixtures, 30 catalogue Q&amp;A fixtures, and 27
+            search fixtures, all passing.
           </p>
           <ul className="metric-grid">
             <li className="metric-card">
@@ -408,37 +360,45 @@ export default function NotesPage() {
           </ul>
           <ul>
             <li>
-              81.5% of search fixtures are resolved deterministically with zero
-              provider calls; 18.5% are genuinely model-worthy and make exactly
-              one call.
+              81.5% of search fixtures resolve with zero provider calls; the
+              other 18.5% make exactly one, with no retries, repair calls,
+              provider or model switching, tools, or endpoint fall-through.
             </li>
             <li>
-              Zero-provider-call fixtures and exactly-one-call fixtures both
-              hold at 100% across their fixtures. No retries, no repair calls,
-              no provider or model switching, no tools, and no endpoint
-              fall-through.
+              Missing-fact accuracy, off-topic and adversarial rejection,
+              no-match accuracy, and invalid-ID and invalid-citation rejection
+              all measure 100% across their fixtures; a bad citation discards
+              the whole answer rather than part of it.
             </li>
             <li>
-              Missing-fact accuracy, off-topic and adversarial rejection, and
-              no-match accuracy are all 100% across their fixtures.
+              Where a fixture declares an expected top hit, it lands in the top
+              three in 100% of them; the average candidate count is 2.1, the
+              maximum is 6, and AI reranking returned 3 results against a
+              configured cap of 4.
             </li>
             <li>
-              Invalid listing IDs and invalid citations are rejected in 100% of
-              their fixtures, and the whole answer is discarded rather than
-              partially shown.
+              Q&amp;A regressions stay green (Apple Pencil exclusion, missing
+              battery health, unconfirmed Bluetooth, fridge capacity, bike
+              brand, monitor fairness, same-day availability, off-catalogue
+              refusals), and deterministic search cases — fan under a budget,
+              monitor/MRT, Arduino/prototyping, laptop raising, tech under S$20,
+              like-new tech, calculator, iPad, dorm filters — make zero provider
+              calls.
             </li>
             <li>
-              For the search fixtures that declare an expected top hit, the
-              expected listing appears in the top three in 100% of them. The
-              average candidate count is 2.1 and the maximum is 6. AI reranking
-              returned 3 results in the fixtures that exercised it; the
-              configured cap is 4.
+              Study/workspace retrieval keeps desk-small-05 and laptop-stand-15,
+              drops the fan and mini fridge for study-only intent, and restores
+              the fan for a study-and-cooling request. Fuzzy multi-candidate
+              search uses one mocked call and caps results at four; provider
+              failures and self-negating reasons fall back to catalogue
+              matching, while gaming PC, invention prompts, contradictory
+              prices, and unknown required features return no-match rather than
+              filler.
             </li>
           </ul>
           <p>
-            The suite breakdown, fixture design, and the full metric table live
-            in <code>docs/evaluation.md</code>; this section records what the
-            numbers mean.
+            The full metric table and fixture design live in{" "}
+            <code>docs/evaluation.md</code>.
           </p>
           <p>
             Provider resilience is evaluated with mocks only: timeout, rate
@@ -446,16 +406,14 @@ export default function NotesPage() {
             error envelope, malformed JSON, empty content, fenced JSON, unknown
             IDs, self-negating reasons, unsupported claims, and ungrounded
             measurements. Q&amp;A degrades to a grounded deterministic fallback
-            and search degrades to catalogue keyword matching, with exactly one
-            provider call in every case.
-          </p>
-          <p>
-            Catalogue-growth regressions use synthetic records only;{" "}
-            <code>data/listings.json</code> is never modified. Sixteen checks
-            confirm that candidate counts stay bounded, hard price, category,
-            condition, accessory, and feature constraints still apply to new
-            records, unconfirmed features never qualify, results stay
-            candidate-bound, and public response schemas do not change.
+            and search to catalogue keyword matching, with exactly one provider
+            call in every case. Catalogue-growth regressions use synthetic
+            records only; <code>data/listings.json</code> is never modified.
+            Sixteen checks confirm that candidate counts stay bounded, that hard
+            price, category, condition, accessory, and feature constraints still
+            apply to new records, that unconfirmed features never qualify, that
+            results stay candidate-bound, and that public response schemas do
+            not change.
           </p>
           <p>
             Two defects surfaced during this evaluation and were fixed with
@@ -463,18 +421,13 @@ export default function NotesPage() {
             leaking into lexical terms, so eight of nine price phrasings
             returned no match instead of applying the bound; and a reranker that
             threw escaped the search orchestrator instead of degrading to
-            catalogue matching.
-          </p>
-          <p>
-            One gap found during this evaluation was fixed rather than left
-            open. Q&amp;A lexical retrieval had no <code>calculator</code>/
-            <code>casio</code> alias, so “What comes with the calculator?”
-            declined instead of naming the included case. The calculator family
-            now resolves through a general product-alias rule, and inclusion
-            questions are answered deterministically from the authoritative{" "}
-            <code>includes</code> field. Six strict fixtures cover the phrasing
-            variants, and a boundary fixture keeps unrelated “case” questions
-            from resolving to the calculator.
+            catalogue matching. A retrieval gap was closed too: with no{" "}
+            <code>calculator</code>/<code>casio</code> alias, “What comes with
+            the calculator?” declined instead of naming the included case, so
+            the family now resolves through a general product-alias rule and
+            inclusion questions are answered deterministically from the
+            authoritative <code>includes</code> field, with six strict fixtures
+            and a boundary fixture for unrelated “case” questions.
           </p>
           <p>
             Privacy and security were re-audited: the credential is absent from
@@ -553,7 +506,7 @@ export default function NotesPage() {
               </li>
               <li>
                 <strong>Database-backed retrieval.</strong> The lexical layer is
-                tuned for 15 records. Past a few hundred listings I would move
+                tuned for 15 records; past a few hundred listings I would move
                 the catalogue into a database with full-text search, and only
                 consider embeddings if relevance measurements showed lexical
                 search plateauing.
@@ -561,7 +514,7 @@ export default function NotesPage() {
               <li>
                 <strong>Structured provider output.</strong> The application
                 validates JSON itself because the gateway does not document
-                native schema support. If that lands, the prompt and parser can
+                native schema support; if that lands, the prompt and parser can
                 shrink.
               </li>
               <li>
@@ -569,22 +522,75 @@ export default function NotesPage() {
                   A second live verification of corrected study retrieval.
                 </strong>
                 The post-correction behaviour is proven by deterministic and
-                mocked tests only. One controlled live request would close that
-                gap.
-              </li>
-              <li>
-                <strong>Device testing.</strong> Physical-phone checks and a
-                desktop Playwright project would turn the automated 375-pixel
-                evidence into a broader matrix.
-              </li>
-              <li>
-                <strong>
-                  Seller accounts, messaging, and real reservations.
-                </strong>
-                These need authentication, moderation, and a payment decision,
-                so they are a different product rather than a next increment.
+                mocked tests only, and the mobile evidence is an automated
+                375-pixel project rather than a real phone; one controlled live
+                request plus physical-device checks and a desktop Playwright
+                project would close both gaps.
               </li>
             </ol>
+          </section>
+
+          <section className="panel notes-section">
+            <h2 id="if-it-became-a-real-marketplace">
+              If it became a real marketplace
+            </h2>
+            <p>
+              Supply comes before agent connectivity: an agent that finds a
+              perfectly tagged item which sold last week is not useful. This is
+              a different product rather than the next increment for the demo,
+              because it needs authentication, moderation, and payment
+              decisions. My order of work:
+            </p>
+            <ol>
+              <li>
+                <strong>AI-assisted listing drafts.</strong> The seller enters
+                title, price, condition, defects, and pickup details; the model
+                suggests a category, tags, missing fields to ask about, and
+                possible duplicates. Suggestions are stored separately from
+                seller-entered facts, never published unconfirmed, and the model
+                must not infer “fully working”, “authentic”, or “like new” from
+                a photo.
+              </li>
+              <li>
+                <strong>Listing lifecycle.</strong> Available, reserved, and
+                sold states, an expiry, and a one-tap “still available?”
+                reminder, so buyers stop enquiring about stale items.
+              </li>
+              <li>
+                <strong>Trust and moderation.</strong> Reporting,
+                prohibited-item checks, duplicate and spam detection, a review
+                queue, and campus-email verification that establishes
+                eligibility without showing a student&apos;s email publicly.
+              </li>
+              <li>
+                <strong>Saved searches and alerts.</strong> Let a student save
+                “calculator under S$30” and hear when a match appears.
+              </li>
+              <li>
+                <strong>Buyer–seller handoff.</strong> A simple enquiry flow
+                with clear status and meetup safety guidance, before any payment
+                work.
+              </li>
+              <li>
+                <strong>A read-only MCP connector.</strong> Expose{" "}
+                <code>search_listings</code>, <code>get_listing</code>, and{" "}
+                <code>ask_catalogue</code> tools that return current
+                availability and cited facts with a link back to the item page,
+                with explicit user approval required before any reserve action.
+                It is the most distinctive item here, so a read-only prototype
+                is worth building early as a separate experiment.
+              </li>
+            </ol>
+            <p>
+              SUTD specificity would stay useful rather than cosmetic:
+              course-equipment, hostel, pickup-area, and meetup-window filters
+              extend the <code>pickup</code> and <code>meetup_window</code>{" "}
+              fields the catalogue already carries. Before building any of this
+              I would instrument the current journey first: searches that return
+              nothing despite relevant listings, listings missing condition,
+              defects, or pickup details, and MCP searches that reach an item
+              page rather than stopping at a tool call.
+            </p>
           </section>
 
           <h2 id="known-issues-and-unfinished-work">
@@ -597,58 +603,46 @@ export default function NotesPage() {
             Production has shown both outcomes for the same comparison question.
             One request returned a real grounded answer: <code>mode: ai</code>,
             finish reason <code>stop</code>, zero reasoning tokens, 238 visible
-            output tokens and 583 total tokens in roughly 3.2 seconds. It cited
-            only the folding desk and the laptop stand, both retrieved
-            candidates, and it named what the catalogue cannot establish:
+            output tokens and 583 total tokens in roughly 3.2 seconds, citing
+            only the folding desk and the laptop stand — both retrieved
+            candidates — and naming what the catalogue cannot establish:
             dimensions, folded size, weight, exact laptop compatibility, and
-            whether either item suits a particular room.
+            room suitability. A second request with the same question retrieved
+            the same two listings, but the provider missed the 25-second cutoff,
+            so the function aborted the call after about 25 seconds and still
+            returned <code>mode: fallback</code> with both items linked to their
+            authoritative details, inside the 30-second function limit.
           </p>
           <p>
-            A separate production request with the same question retrieved the
-            same two listings, but the provider did not answer before my
-            25-second cutoff. The function ran for about 25 seconds, aborted the
-            provider call, and returned <code>mode: fallback</code>: a
-            deterministic summary that still linked the folding desk and laptop
-            stand with their authoritative details. It finished inside the
-            30-second function limit.
-          </p>
-          <p>
-            That intermittent behaviour comes from upstream provider latency,
-            which I cannot control, not from retrieval or citation logic — both
-            requests selected the same two correct listings. Provider latency is
-            therefore an external production limitation, and the timeout
-            boundary is what makes it safe rather than invisible. The
-            deterministic catalogue answers never depend on the provider at all.
-          </p>
-          <p>
-            Earlier attempts failed honestly before this worked: the default
-            fallback route returned an HTTP 200 error envelope, the first
-            explicit OpenRouter attempt spent its whole budget on reasoning, and
-            a later attempt exceeded the original twelve-second timeout. Each
-            one fell back to the grounded deterministic summary with validated
-            listings rather than inventing an answer.
+            The difference is upstream provider latency, which I cannot control,
+            not retrieval or citation logic — both requests selected the same
+            two correct listings. That latency is an external production
+            limitation, and the timeout boundary is what makes it safe rather
+            than invisible; the deterministic catalogue answers never depend on
+            the provider. Earlier attempts failed honestly: the default fallback
+            route returned an HTTP 200 error envelope, the first explicit
+            OpenRouter attempt spent its whole budget on reasoning, and a later
+            attempt exceeded the original twelve-second timeout. Each fell back
+            to the grounded summary with validated listings rather than
+            inventing an answer.
           </p>
           <p>
             One controlled live search request was made before the retrieval
-            correction for
+            correction, for{" "}
             <code>something compact for studying in a small hostel room</code>.
             It returned HTTP 200, <code>mode: ai-reranked</code>, exactly one
-            provider call, approximately 1.55 seconds of route latency, and
-            validated final IDs <code>desk-small-05</code> and
-            <code>fan-hostel-01</code>. The candidate set also included
-            <code>fridge-mini-03</code> and omitted
-            <code>laptop-stand-15</code>, exposing a lexical purpose-matching
-            weakness. The model explicitly said the fan was not study-related.
-          </p>
-          <p>
-            I corrected that weakness deterministically with general
-            study/workspace, laptop-raising, cooling, food-storage, and
-            multi-intent evidence profiles. Study-only retrieval now requires
-            stronger purpose evidence; generic hostel, dorm, and small-room
-            words do not qualify every dorm appliance. Search also rejects
-            clearly self-negating model reasons and falls back to catalogue
-            matching. The correction was verified by deterministic and mocked
-            regression tests, not by another live provider request.
+            provider call, roughly 1.55 seconds of route latency, and validated
+            IDs <code>desk-small-05</code> and <code>fan-hostel-01</code> — but
+            its candidate set also included <code>fridge-mini-03</code> and
+            omitted <code>laptop-stand-15</code>, exposing a lexical
+            purpose-matching weakness, and the model itself said the fan was not
+            study-related. I corrected that with general study/workspace,
+            laptop-raising, cooling, food-storage, and multi-intent evidence
+            profiles, so study-only retrieval now needs stronger purpose
+            evidence than generic hostel, dorm, or small-room words. Search also
+            rejects clearly self-negating model reasons and falls back to
+            catalogue matching, and the correction is verified by deterministic
+            and mocked regression tests, not another live provider request.
           </p>
           <p>
             Exact dimensions, weight, and compactness remain unknown unless a
