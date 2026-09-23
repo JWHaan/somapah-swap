@@ -123,17 +123,23 @@ describe("release metrics", () => {
         { catalogue, reranker: searchReranker() },
       );
       const ids = result.response.results.map((entry) => entry.id);
+      const allowedIdsOk =
+        !testCase.allowedIds ||
+        ids.every((id) => testCase.allowedIds!.includes(id));
+      const prohibitedIdsOk = (testCase.prohibitedIds ?? []).every(
+        (id) => !ids.includes(id),
+      );
       const pass =
         result.evaluation.decision === testCase.decision &&
         result.response.mode === testCase.mode &&
         result.evaluation.providerCallCount === testCase.providerCalls &&
         (!testCase.expectedTop || ids[0] === testCase.expectedTop) &&
-        (testCase.allowedIds ?? ids).every((allowed) =>
-          testCase.allowedIds ? ids.includes(allowed) || true : true,
-        ) &&
-        (testCase.prohibitedIds ?? []).every((id) => !ids.includes(id));
+        allowedIdsOk &&
+        prohibitedIdsOk;
+      // Only meaningful for fixtures that declare an expected top hit.
       const topThreeOk =
-        !testCase.expectedTop || ids.slice(0, 3).includes(testCase.expectedTop);
+        testCase.expectedTop !== undefined &&
+        ids.slice(0, 3).includes(testCase.expectedTop);
 
       searchResults.push({
         testCase,
@@ -212,6 +218,9 @@ describe("release metrics", () => {
     const calculatorCases = qaResults.filter(
       (entry) => entry.testCase.category === "calculator-includes",
     );
+    const expectedTopCases = searchResults.filter(
+      (entry) => entry.testCase.expectedTop !== undefined,
+    );
 
     const metrics = {
       intentFixtureCount: intents.length,
@@ -254,14 +263,9 @@ describe("release metrics", () => {
         noMatchCases.filter((e) => e.pass).length,
         noMatchCases.length,
       ),
-      fallbackCorrectness: pct(
-        qaResults.filter((e) => e.result.response.mode !== "fallback" || e.pass)
-          .length,
-        qaResults.length,
-      ),
-      expectedSearchResultInTopThree: pct(
-        searchResults.filter((e) => e.topThreeOk).length,
-        searchResults.length,
+      expectedTopHitInTopThree: pct(
+        expectedTopCases.filter((e) => e.topThreeOk).length,
+        expectedTopCases.length,
       ),
       averageCandidateCount:
         Math.round(
@@ -291,7 +295,8 @@ describe("release metrics", () => {
     expect(metrics.missingFactAccuracy).toBe(100);
     expect(metrics.offTopicRejectionAccuracy).toBe(100);
     expect(metrics.noMatchAccuracy).toBe(100);
-    expect(metrics.expectedSearchResultInTopThree).toBe(100);
+    expect(expectedTopCases.length).toBeGreaterThan(0);
+    expect(metrics.expectedTopHitInTopThree).toBe(100);
     expect(metrics.maximumCandidateCount).toBeLessThanOrEqual(12);
     expect(metrics.maximumAiRerankedResultCount).toBeLessThanOrEqual(4);
     expect(metrics.maximumAcceptedCitationCount).toBeLessThanOrEqual(6);

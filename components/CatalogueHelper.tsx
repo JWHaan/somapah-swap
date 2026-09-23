@@ -342,7 +342,7 @@ export function CatalogueHelper({ listings }: CatalogueHelperProps) {
     if (decision.intent === "search" && trimmed.length > MAX_SEARCH_LENGTH) {
       setStatus("error");
       setErrorMessage(
-        `That search is too long. Keep search terms under ${MAX_SEARCH_LENGTH} characters, or phrase it as a question.`,
+        `That search is too long. Shorten it to ${MAX_SEARCH_LENGTH} characters or fewer.`,
       );
       return;
     }
@@ -419,8 +419,9 @@ export function CatalogueHelper({ listings }: CatalogueHelperProps) {
             value={input}
           />
           <p className="search-help" id={helpId}>
-            Find listings with a budget, category, or purpose, or ask about
-            price, condition, included items, defects, or meetup details.
+            Find listings by budget, category, or purpose, or ask about an item.
+            Searches allow up to {MAX_SEARCH_LENGTH} characters; questions up to{" "}
+            {MAX_HELPER_INPUT_LENGTH}.
           </p>
           <div className="search-examples">
             <span className="search-examples__label" id={examplesId}>

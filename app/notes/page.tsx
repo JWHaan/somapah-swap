@@ -164,7 +164,7 @@ export default function NotesPage() {
             grid, so chips still filter results without any new request. A
             grounded answer replaces the grid and hides the chips, because
             category filters do not apply to citations. Clearing the control
-            returns to the default category-filtered catalogue.
+            returns to the full catalogue with All selected.
           </p>
           <p>
             The intent router is plain deterministic code. It makes no model
@@ -196,7 +196,7 @@ export default function NotesPage() {
           <p>
             Most questions never reach a model. Exact facts, explicit
             exclusions, missing facts, and off-catalogue requests are decided in
-            code, which makes them faster and impossible to hallucinate. The
+            code, which keeps those paths free of model-generated claims. The
             model is asked only when a comparison or explanation genuinely
             benefits from language reasoning, and it receives just the retrieved
             listings.
@@ -364,6 +364,11 @@ export default function NotesPage() {
             Release evaluation, 23 September 2026
           </h2>
           <p>
+            Every figure below is computed from this repository&apos;s named
+            evaluation fixtures, so it describes fixture behaviour rather than
+            general marketplace accuracy.
+          </p>
+          <p>
             I consolidated the deterministic and mocked suites into one command,
             <code>npm run eval</code>, which never contacts a provider. Across{" "}
             <strong>20 intent-routing fixtures</strong>,{" "}
@@ -385,7 +390,9 @@ export default function NotesPage() {
               <span className="metric-card__value">27 / 100%</span>
             </li>
             <li className="metric-card">
-              <span className="metric-card__label">Zero provider calls</span>
+              <span className="metric-card__label">
+                Zero-provider-call fixtures
+              </span>
               <span className="metric-card__value">100%</span>
             </li>
             <li className="metric-card">
@@ -394,9 +401,9 @@ export default function NotesPage() {
             </li>
             <li className="metric-card">
               <span className="metric-card__label">
-                Max AI results accepted
+                Max AI results observed
               </span>
-              <span className="metric-card__value">4</span>
+              <span className="metric-card__value">3</span>
             </li>
           </ul>
           <ul>
@@ -407,21 +414,25 @@ export default function NotesPage() {
             </li>
             <li>
               Zero-provider-call fixtures and exactly-one-call fixtures both
-              hold at 100%. No retries, no repair calls, no provider or model
-              switching, no tools, and no endpoint fall-through.
+              hold at 100% across their fixtures. No retries, no repair calls,
+              no provider or model switching, no tools, and no endpoint
+              fall-through.
             </li>
             <li>
               Missing-fact accuracy, off-topic and adversarial rejection, and
               no-match accuracy are all 100% across their fixtures.
             </li>
             <li>
-              Invalid listing IDs and invalid citations are rejected at 100%,
-              and the whole answer is discarded rather than partially shown.
+              Invalid listing IDs and invalid citations are rejected in 100% of
+              their fixtures, and the whole answer is discarded rather than
+              partially shown.
             </li>
             <li>
-              Expected search results appear in the top three in 100% of cases;
-              average candidate count is 2.2, maximum 6, and AI reranking is
-              capped at 4 accepted results.
+              For the search fixtures that declare an expected top hit, the
+              expected listing appears in the top three in 100% of them. The
+              average candidate count is 2.1 and the maximum is 6. AI reranking
+              returned 3 results in the fixtures that exercised it; the
+              configured cap is 4.
             </li>
           </ul>
           <p>

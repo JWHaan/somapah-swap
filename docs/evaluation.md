@@ -56,24 +56,23 @@ adds or removes a model call fails the suite.
 Computed from the fixtures on every run by `release-metrics.test.ts`; the values
 below are the current output.
 
-| Metric                                    | Value      |
-| ----------------------------------------- | ---------- |
-| Intent fixtures                           | 20 at 100% |
-| Q&A fixtures                              | 30 at 100% |
-| Search fixtures                           | 27 at 100% |
-| Deterministic requests                    | 81.5%      |
-| Model-worthy requests                     | 18.5%      |
-| Zero-provider-call fixtures               | 100%       |
-| Exactly one call (model-worthy)           | 100%       |
-| Missing-fact accuracy                     | 100%       |
-| Off-topic and adversarial rejection       | 100%       |
-| No-match accuracy                         | 100%       |
-| Fallback correctness                      | 100%       |
-| Expected result in top three              | 100%       |
-| Invalid-ID and invalid-citation rejection | 100%       |
-| Average candidate count                   | 2.1        |
-| Maximum candidate count                   | 6          |
-| Maximum AI-reranked results               | 4 (cap)    |
+| Metric                                              | Value                          |
+| --------------------------------------------------- | ------------------------------ |
+| Intent fixtures                                     | 20 at 100%                     |
+| Q&A fixtures                                        | 30 at 100%                     |
+| Search fixtures                                     | 27 at 100%                     |
+| Deterministic requests                              | 81.5%                          |
+| Model-worthy requests                               | 18.5%                          |
+| Zero-provider-call fixtures                         | 100%                           |
+| Exactly one call (model-worthy)                     | 100%                           |
+| Missing-fact accuracy                               | 100%                           |
+| Off-topic and adversarial rejection                 | 100%                           |
+| No-match accuracy                                   | 100%                           |
+| Expected top hit in top three (applicable fixtures) | 100%                           |
+| Invalid-ID and invalid-citation rejection           | 100%                           |
+| Average candidate count                             | 2.1                            |
+| Maximum candidate count                             | 6                              |
+| Maximum AI-reranked results                         | 3 observed (configured cap: 4) |
 
 ## What the fixtures deliberately pin
 
@@ -90,8 +89,10 @@ below are the current output.
   without modifying `data/listings.json`.
 - **Provider resilience.** Timeout, rate limit, authentication failure,
   unavailability, an HTTP 200 error envelope, malformed JSON, empty content,
-  fenced JSON, and thrown errors all degrade to the deterministic fallback with no
-  second call.
+  fenced JSON, and thrown errors all have dedicated mocked tests that assert a
+  deterministic fallback with no second call. There is no fallback-success
+  percentage: the resilience tests are scenario assertions, and the release
+  metric set deliberately reports no aggregate rate for them.
 
 ## Provider observations
 

@@ -110,7 +110,9 @@ only, no provider contact.
 
 ## Evaluation summary
 
-Current local verification:
+Current local verification. Percentages are computed from this repository's
+named evaluation fixtures and describe fixture behaviour, not general
+marketplace accuracy.
 
 - 519 unit tests across 22 files.
 - 71 Playwright tests in one mobile project.
@@ -118,9 +120,12 @@ Current local verification:
 - 30 Q&A fixtures, 27 search fixtures, and 20 intent-routing fixtures, all passing.
 - 81.5 percent of search fixtures resolve deterministically with zero provider
   calls; 18.5 percent are model-worthy and make exactly one call.
-- Missing-fact accuracy, no-match accuracy, off-topic rejection, fallback
-  correctness, and invalid-ID and invalid-citation rejection all measure 100
-  percent across their fixtures.
+- Missing-fact accuracy, no-match accuracy, off-topic rejection, and invalid-ID
+  and invalid-citation rejection all measure 100 percent across their fixtures.
+- Provider resilience is covered by dedicated mocked scenarios rather than an
+  aggregate percentage: timeouts, rate limits, authentication failures,
+  unavailability, HTTP 200 error envelopes, malformed output, and bad citations
+  each degrade to a deterministic fallback with no second call.
 
 Fixture design and the full metric table are in
 [`docs/evaluation.md`](docs/evaluation.md).
